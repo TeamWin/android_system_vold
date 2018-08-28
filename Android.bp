@@ -109,6 +109,8 @@ cc_library_static {
     defaults: [
         "vold_default_flags",
         "vold_default_libs",
+        "vold_hw_fde_defaults",
+        "vold_hw_fde_perf_defaults",
     ],
     include_dirs: [
         "system/core/gatekeeperd/include"
@@ -169,14 +171,6 @@ cc_library_static {
         debuggable: {
             cppflags: ["-D__ANDROID_DEBUGGABLE__"],
         },
-        device_support_hwfde: {
-            cflags: ["-DCONFIG_HW_DISK_ENCRYPTION"],
-            header_libs: ["libcryptfs_hw_headers"],
-            shared_libs: ["libcryptfs_hw"],
-        },
-        device_support_hwfde_perf: {
-            cflags: ["-DCONFIG_HW_DISK_ENCRYPT_PERF"],
-        },
     },
     shared_libs: [
         "android.hardware.confirmationui@1.0",
@@ -215,6 +209,7 @@ cc_binary {
     defaults: [
         "vold_default_flags",
         "vold_default_libs",
+        "vold_hw_fde_defaults",
     ],
 
     srcs: ["main.cpp"],
@@ -248,9 +243,6 @@ cc_binary {
                 "libarcvolume",
             ],
         },
-        device_support_hwfde: {
-            shared_libs: ["libcryptfs_hw"],
-        }
 	},
 }
 
