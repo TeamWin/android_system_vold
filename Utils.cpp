@@ -88,6 +88,7 @@ static const char* kAppObbDir = "/Android/obb/";
 
 static const char* kMediaProviderCtx = "u:r:mediaprovider:";
 static const char* kMediaProviderAppCtx = "u:r:mediaprovider_app:";
+struct selabel_handle* sehandle;
 
 // Lock used to protect process-level SELinux changes from racing with each
 // other between multiple threads.
