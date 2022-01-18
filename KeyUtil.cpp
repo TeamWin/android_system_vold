@@ -57,10 +57,10 @@ bool generateStorageKey(const KeyGeneration& gen, KeyBuffer* key) {
             LOG(ERROR) << "Cannot generate a wrapped key " << gen.keysize << " bytes long";
             return false;
         }
-        LOG(DEBUG) << "Generating wrapped storage key";
+        LOG(INFO) << "Generating wrapped storage key";
         return generateWrappedStorageKey(key);
     } else {
-        LOG(DEBUG) << "Generating standard storage key";
+        LOG(INFO) << "Generating standard storage key";
         return randomKey(gen.keysize, key);
     }
 }
@@ -87,7 +87,7 @@ static bool isFsKeyringSupportedImpl() {
     if (errno != EFAULT) {
         PLOG(WARNING) << "Unexpected error from FS_IOC_ADD_ENCRYPTION_KEY";
     }
-    LOG(DEBUG) << "Detected support for FS_IOC_ADD_ENCRYPTION_KEY";
+    LOG(INFO) << "Detected support for FS_IOC_ADD_ENCRYPTION_KEY";
     android::base::SetProperty("ro.crypto.uses_fs_ioc_add_encryption_key", "true");
     return true;
 }
@@ -172,7 +172,7 @@ static bool installKeyLegacy(const KeyBuffer& key, const std::string& raw_ref) {
             PLOG(ERROR) << "Failed to insert key into keyring " << device_keyring;
             return false;
         }
-        LOG(DEBUG) << "Added key " << key_id << " (" << ref << ") to keyring " << device_keyring
+        LOG(INFO) << "Added key " << key_id << " (" << ref << ") to keyring " << device_keyring
                    << " in process " << getpid();
     }
     return true;
@@ -200,7 +200,7 @@ static bool installProvisioningKey(const KeyBuffer& key, const std::string& ref,
                     << " into session keyring";
         return false;
     }
-    LOG(DEBUG) << "Added fscrypt-provisioning key for " << ref << " to session keyring";
+    LOG(INFO) << "Added fscrypt-provisioning key for " << ref << " to session keyring";
     return true;
 }
 
@@ -312,7 +312,7 @@ bool installKey(const std::string& mountpoint, const EncryptionOptions& options,
                 std::string((char*)arg->key_spec.u.identifier, FSCRYPT_KEY_IDENTIFIER_SIZE);
     }
     std::string ref = keyrefstring(policy->key_raw_ref);
-    LOG(DEBUG) << "Installed fscrypt key with ref " << ref << " to " << mountpoint;
+    LOG(INFO) << "Installed fscrypt key with ref " << ref << " to " << mountpoint;
 
     if (!installProvisioningKey(key, ref, arg->key_spec)) return false;
     return true;
@@ -335,7 +335,7 @@ static bool evictKeyLegacy(const std::string& raw_ref) {
             PLOG(ERROR) << "Failed to unlink key with serial " << key_serial << " ref " << ref;
             success = false;
         } else {
-            LOG(DEBUG) << "Unlinked key with serial " << key_serial << " ref " << ref;
+            LOG(INFO) << "Unlinked key with serial " << key_serial << " ref " << ref;
         }
     }
     return success;
@@ -386,7 +386,7 @@ bool evictKey(const std::string& mountpoint, const EncryptionPolicy& policy) {
         return false;
     }
 
-    LOG(DEBUG) << "Evicted fscrypt key with ref " << ref << " from " << mountpoint;
+    LOG(INFO) << "Evicted fscrypt key with ref " << ref << " from " << mountpoint;
     if (arg.removal_status_flags & FSCRYPT_KEY_REMOVAL_STATUS_FLAG_OTHER_USERS) {
         // Should never happen because keys are only added/removed as root.
         LOG(ERROR) << "Unexpected case: key with ref " << ref << " is still added by other users!";
@@ -403,7 +403,7 @@ bool retrieveOrGenerateKey(const std::string& key_path, const std::string& tmp_p
                            const KeyAuthentication& key_authentication, const KeyGeneration& gen,
                            KeyBuffer* key) {
     if (pathExists(key_path)) {
-        LOG(DEBUG) << "Key exists, using: " << key_path;
+        LOG(INFO) << "Key exists, using: " << key_path;
         if (!retrieveKey(key_path, key_authentication, key)) return false;
     } else {
         if (!gen.allow_gen) {
@@ -431,7 +431,7 @@ bool reloadKeyFromSessionKeyring(const std::string& mountpoint, const Encryption
         return false;
     }
 
-    LOG(DEBUG) << "Installing fscrypt-provisioning key for " << ref << " back into " << mountpoint
+    LOG(INFO) << "Installing fscrypt-provisioning key for " << ref << " back into " << mountpoint
                << " fs-keyring";
 
     struct fscrypt_add_key_arg arg;
