@@ -205,7 +205,7 @@ KeystoreOperation Keystore::begin(const std::string& key, const km::Authorizatio
             std::optional<std::vector<uint8_t>>(std::vector<uint8_t>(key.begin(), key.end()));
 
     ks2::CreateOperationResponse cor;
-    auto rc = securityLevel->createOperation(keyDesc, inParams.vector_data(), true, &cor);
+    auto rc = securityLevel->createOperation(keyDesc, inParams.vector_data(), false, &cor);
     if (logKeystore2ExceptionIfPresent(rc, "createOperation")) {
         if (rc.getExceptionCode() == EX_SERVICE_SPECIFIC)
             return KeystoreOperation((km::ErrorCode)rc.getServiceSpecificError());
@@ -219,7 +219,6 @@ KeystoreOperation Keystore::begin(const std::string& key, const km::Authorizatio
     }
 
     if (outParams && cor.parameters) *outParams = cor.parameters->keyParameter;
-
     return KeystoreOperation(cor.iOperation, cor.upgradedBlob);
 }
 

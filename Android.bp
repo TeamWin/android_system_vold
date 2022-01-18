@@ -10,6 +10,8 @@ cc_defaults {
         "-Werror",
         "-Wextra",
         "-Wno-unused-parameter",
+        "-Wno-unused-variable",
+        "-Wno-macro-redefined",
     ],
 
     tidy: true,
@@ -56,7 +58,6 @@ cc_defaults {
         "libincfs",
         "libhidlbase",
         "libkeyutils",
-        "liblog",
         "liblogwrap",
         "libselinux",
         "libsysutils",
@@ -104,16 +105,26 @@ cc_library_static {
         "vold_default_flags",
         "vold_default_libs",
         "keystore2_use_latest_aidl_ndk_shared",
+        "vold_hw_fde_defaults",
+        "vold_hw_fde_perf_defaults",
+        "vold_defaults"
     ],
-
+    include_dirs: [
+        "system/core/gatekeeperd/include"
+    ],
     srcs: [
         "AppFuseUtil.cpp",
         "Benchmark.cpp",
         "Checkpoint.cpp",
+        "cryptfs.cpp",
         "CryptoType.cpp",
+        "Decrypt.cpp",
+        "Devmapper.cpp",
         "EncryptInplace.cpp",
         "FileDeviceUtils.cpp",
         "FsCrypt.cpp",
+        "fscrypt_policy.cpp",
+        "HashPassword.cpp",
         "IdleMaint.cpp",
         "KeyBuffer.cpp",
         "KeyStorage.cpp",
@@ -130,7 +141,7 @@ cc_library_static {
         "VoldNativeServiceValidation.cpp",
         "VoldUtil.cpp",
         "VolumeManager.cpp",
-        "cryptfs.cpp",
+        "Weaver1.cpp",
         "fs/Exfat.cpp",
         "fs/Ext4.cpp",
         "fs/F2fs.cpp",
@@ -158,10 +169,30 @@ cc_library_static {
         },
     },
     shared_libs: [
+        "android.hardware.confirmationui@1.0",
+        "android.hardware.gatekeeper@1.0",
         "android.hardware.health.storage@1.0",
         "android.hardware.health.storage-V1-ndk",
         "android.security.maintenance-ndk",
+        "android.hardware.keymaster@4.1",
+        "android.hardware.security.keymint-V1-ndk_platform",
+        "android.hardware.weaver@1.0",
+        "android.security.apc-ndk_platform",
+        "android.system.keystore2-V1-ndk_platform",
+        "android.system.keystore2-V1-ndk_platform",
+        "android.security.authorization-ndk_platform",
+        "android.security.maintenance-ndk_platform",
+        "libbinder",
         "libbinder_ndk",
+        "libgatekeeper",
+        "libgatekeeper_aidl",
+        "libhardware",
+        "libhidlbase",
+        "liblog",
+        "libchrome",
+        "libkeymaster4_1support",
+        "libkeystoreinfo",
+        "libkeystore-attestation-application-id",
         "libkeymint_support",
     ],
     whole_static_libs: [
@@ -271,4 +302,67 @@ filegroup {
         "binder/android/os/IVoldTaskListener.aidl",
     ],
     path: "binder",
+}
+
+cc_library {
+    name: "libkeystoreinfo",
+    host_supported: true,
+    cflags: [
+        "-Wno-unused-parameter",
+        "-Wno-unused-variable"
+    ],
+    include_dirs: [
+        "external/sqlite/dist/",
+        "system/vold"
+    ],
+    recovery_available: true,
+    srcs: [
+        "KeystoreInfo.cpp"
+    ],
+    shared_libs: [
+        "libsqlite"
+    ],
+    system_shared_libs: [
+        "libc", 
+        "libdl",
+        ],
+}
+
+cc_binary {
+    name: "fscryptpolicyget",
+    defaults: [
+        "vold_default_flags",
+        "vold_default_libs"
+    ],
+
+    srcs: ["fscryptpolicyget.cpp"],
+    static_libs: ["libvold"],
+
+    shared_libs: [
+        "android.hardware.health.storage@1.0",
+        "android.hardware.health.storage-V1-ndk_platform",
+        "android.system.keystore2-V1-ndk_platform",
+        "android.security.maintenance-ndk_platform",
+        "libbinder_ndk",
+        "libkeymint_support",
+    ]
+}
+
+bootstrap_go_package {
+    name: "soong-vold_defaults",
+    pkgPath: "system/vold",
+    deps: [
+        "soong",
+        "soong-android",
+        "soong-cc"
+    ],
+    srcs: [
+        "vold_defaults.go",
+        "soong/makevars.go"
+    ],
+    pluginFor: ["soong_build"]
+}
+
+vold_defaults {
+  name: "vold_defaults"
 }
