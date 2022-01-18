@@ -100,6 +100,12 @@ static bool mount_via_fs_mgr(const char* mount_point, const char* blk_device) {
         PLOG(ERROR) << "Failed to setexeccon";
         return false;
     }
+    if (fstab_default.empty()) {
+        if (!ReadDefaultFstab(&fstab_default)) {
+            PLOG(ERROR) << "Failed to open default fstab";
+            return false;
+        }
+    }
     auto mount_rc = fs_mgr_do_mount(&fstab_default, const_cast<char*>(mount_point),
                                     const_cast<char*>(blk_device), nullptr,
                                     android::vold::cp_needsCheckpoint(), true);
@@ -111,7 +117,7 @@ static bool mount_via_fs_mgr(const char* mount_point, const char* blk_device) {
         LOG(ERROR) << "fs_mgr_do_mount failed with rc " << mount_rc;
         return false;
     }
-    LOG(DEBUG) << "Mounted " << mount_point;
+    LOG(INFO) << "Mounted " << mount_point;
     return true;
 }
 
@@ -123,7 +129,7 @@ static bool read_key(const std::string& metadata_key_dir, const KeyGeneration& g
     }
     std::string sKey;
     auto dir = metadata_key_dir + "/key";
-    LOG(DEBUG) << "metadata_key_dir/key: " << dir;
+    LOG(INFO) << "metadata_key_dir/key: " << dir;
     if (!MkdirsSync(dir, 0700)) return false;
     auto in_dsu = android::base::GetBoolProperty("ro.gsid.image_running", false);
     // !pathExists(dir) does not imply there's a factory reset when in DSU mode.
@@ -134,7 +140,7 @@ static bool read_key(const std::string& metadata_key_dir, const KeyGeneration& g
             LOG(INFO) << "Metadata key does not exist, calling deleteAllKeys";
             Keystore::deleteAllKeys();
         } else {
-            LOG(DEBUG) << "Metadata key does not exist but "
+            LOG(INFO) << "Metadata key does not exist but "
                           "ro.crypto.metadata_init_delete_all_keys.enabled is false";
         }
     }
@@ -239,7 +245,7 @@ static bool parse_options(const std::string& options_string, CryptoOptions* opti
 bool fscrypt_mount_metadata_encrypted(const std::string& blk_device, const std::string& mount_point,
                                       bool needs_encrypt, bool should_format,
                                       const std::string& fs_type) {
-    LOG(DEBUG) << "fscrypt_mount_metadata_encrypted: " << mount_point
+    LOG(INFO) << "fscrypt_mount_metadata_encrypted: " << mount_point
                << " encrypt: " << needs_encrypt << " format: " << should_format << " with "
                << fs_type;
     auto encrypted_state = android::base::GetProperty("ro.crypto.state", "");
@@ -247,6 +253,13 @@ bool fscrypt_mount_metadata_encrypted(const std::string& blk_device, const std::
         LOG(ERROR) << "fscrypt_mount_metadata_encrypted got unexpected starting state: "
                    << encrypted_state;
         return false;
+    }
+
+    if (fstab_default.empty()) {
+        if (!ReadDefaultFstab(&fstab_default)) {
+            PLOG(ERROR) << "Failed to open default fstab";
+            return false;
+        }
     }
 
     auto data_rec = GetEntryForMountPoint(&fstab_default, mount_point);
@@ -321,8 +334,9 @@ bool fscrypt_mount_metadata_encrypted(const std::string& blk_device, const std::
         }
     }
 
-    LOG(DEBUG) << "Mounting metadata-encrypted filesystem:" << mount_point;
+    LOG(INFO) << "Mounting metadata-encrypted filesystem:" << mount_point;
     mount_via_fs_mgr(mount_point.c_str(), crypto_blkdev.c_str());
+    android::base::SetProperty("ro.crypto.fs_crypto_blkdev", crypto_blkdev);
 
     // Record that there's at least one fstab entry with metadata encryption
     if (!android::base::SetProperty("ro.crypto.metadata.enabled", "true")) {
@@ -345,7 +359,7 @@ bool defaultkey_volume_keygen(KeyGeneration* gen) {
 
 bool defaultkey_setup_ext_volume(const std::string& label, const std::string& blk_device,
                                  const KeyBuffer& key, std::string* out_crypto_blkdev) {
-    LOG(DEBUG) << "defaultkey_setup_ext_volume: " << label << " " << blk_device;
+    LOG(INFO) << "defaultkey_setup_ext_volume: " << label << " " << blk_device;
 
     CryptoOptions options;
     if (!get_volume_options(&options)) return false;
@@ -354,17 +368,23 @@ bool defaultkey_setup_ext_volume(const std::string& label, const std::string& bl
 }
 
 bool destroy_dsu_metadata_key(const std::string& dsu_slot) {
-    LOG(DEBUG) << "destroy_dsu_metadata_key: " << dsu_slot;
+    LOG(INFO) << "destroy_dsu_metadata_key: " << dsu_slot;
 
     const auto dsu_metadata_key_dir = android::gsi::GetDsuMetadataKeyDir(dsu_slot);
     if (!pathExists(dsu_metadata_key_dir)) {
-        LOG(DEBUG) << "DSU metadata_key_dir doesn't exist, nothing to remove: "
+        LOG(INFO) << "DSU metadata_key_dir doesn't exist, nothing to remove: "
                    << dsu_metadata_key_dir;
         return true;
     }
 
     // Ensure that the DSU key directory is different from the host OS'.
     // Under normal circumstances, this should never happen, but handle it just in case.
+    if (fstab_default.empty()) {
+        if (!ReadDefaultFstab(&fstab_default)) {
+            PLOG(ERROR) << "Failed to open default fstab";
+            return false;
+        }
+    }
     if (auto data_rec = GetEntryForMountPoint(&fstab_default, "/data")) {
         if (dsu_metadata_key_dir == data_rec->metadata_key_dir) {
             LOG(ERROR) << "DSU metadata_key_dir is same as host OS: " << dsu_metadata_key_dir;
@@ -376,7 +396,7 @@ bool destroy_dsu_metadata_key(const std::string& dsu_slot) {
     for (auto suffix : {"/key", "/tmp"}) {
         const auto key_path = dsu_metadata_key_dir + suffix;
         if (pathExists(key_path)) {
-            LOG(DEBUG) << "Destroy key: " << key_path;
+            LOG(INFO) << "Destroy key: " << key_path;
             if (!android::vold::destroyKey(key_path)) {
                 LOG(ERROR) << "Failed to destroyKey(): " << key_path;
                 ok = false;
@@ -387,7 +407,7 @@ bool destroy_dsu_metadata_key(const std::string& dsu_slot) {
         return false;
     }
 
-    LOG(DEBUG) << "Remove DSU metadata_key_dir: " << dsu_metadata_key_dir;
+    LOG(INFO) << "Remove DSU metadata_key_dir: " << dsu_metadata_key_dir;
     // DeleteDirContentsAndDir() already logged any error, so don't log repeatedly.
     return android::vold::DeleteDirContentsAndDir(dsu_metadata_key_dir) == android::OK;
 }
