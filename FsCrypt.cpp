@@ -59,6 +59,7 @@
 #include <android-base/stringprintf.h>
 #include <android-base/strings.h>
 #include <android-base/unique_fd.h>
+#include "fscrypt-common.h"
 
 using android::base::Basename;
 using android::base::Realpath;
@@ -109,14 +110,15 @@ std::map<userid_t, KeyBuffer> s_new_ce_keys;
 // The system DE encryption policy
 EncryptionPolicy s_device_policy;
 
+}  // namespace
+
 // Map user ids to encryption policies
 std::map<userid_t, EncryptionPolicy> s_de_policies;
 std::map<userid_t, EncryptionPolicy> s_ce_policies;
 
 // CE key fixation operations that have been deferred to checkpoint commit
 std::map<std::string, std::string> s_deferred_fixations;
-
-}  // namespace
+std::string de_key_raw_ref;
 
 // Returns KeyGeneration suitable for key as described in EncryptionOptions
 static KeyGeneration makeGen(const EncryptionOptions& options) {
@@ -215,9 +217,9 @@ static bool read_and_fixate_user_ce_key(userid_t user_id,
     auto const directory_path = get_ce_key_directory_path(user_id);
     auto const paths = get_ce_key_paths(directory_path);
     for (auto const ce_key_path : paths) {
-        LOG(DEBUG) << "Trying user CE key " << ce_key_path;
+        LOG(INFO) << "Trying user CE key " << ce_key_path;
         if (retrieveKey(ce_key_path, auth, ce_key)) {
-            LOG(DEBUG) << "Successfully retrieved key";
+            LOG(INFO) << "Successfully retrieved key";
             s_deferred_fixations.erase(directory_path);
             fixate_user_ce_key(directory_path, ce_key_path, paths);
             return true;
@@ -256,6 +258,12 @@ static bool MightBeEmmcStorage(const std::string& blk_device) {
 
 // Sets s_data_options to the file encryption options for the /data filesystem.
 static bool init_data_file_encryption_options() {
+    if (fstab_default.empty()) {
+        if (!ReadDefaultFstab(&fstab_default)) {
+            PLOG(ERROR) << "Failed to open default fstab";
+            return false;
+        }
+    }
     auto entry = GetEntryForMountPoint(&fstab_default, DATA_MNT_POINT);
     if (entry == nullptr) {
         LOG(ERROR) << "No mount point entry for " << DATA_MNT_POINT;
@@ -332,7 +340,7 @@ static bool read_and_install_user_ce_key(userid_t user_id,
     EncryptionPolicy ce_policy;
     if (!install_storage_key(DATA_MNT_POINT, s_data_options, ce_key, &ce_policy)) return false;
     s_ce_policies[user_id] = ce_policy;
-    LOG(DEBUG) << "Installed ce key for user " << user_id;
+    LOG(INFO) << "Installed ce key for user " << user_id;
     return true;
 }
 
@@ -454,6 +462,7 @@ static bool load_all_de_keys() {
         userid_t user_id = std::stoi(entry->d_name);
         auto key_path = de_dir + "/" + entry->d_name;
         KeyBuffer de_key;
+        LOG(INFO) << "fscrypt::load_all_de_keys::retrieveKey";
         if (!retrieveKey(key_path, kEmptyAuthentication, &de_key)) {
             // This is probably a partially removed user, so ignore
             if (user_id != 0) continue;
@@ -466,7 +475,9 @@ static bool load_all_de_keys() {
             LOG(ERROR) << "DE policy for user" << user_id << " changed";
             return false;
         }
-        LOG(DEBUG) << "Installed de key for user " << user_id;
+        LOG(INFO) << "Installed de key for user " << user_id;
+        std::string user_prop = "twrp.user." + std::to_string(user_id) + ".decrypt";
+        property_set(user_prop.c_str(), "0");
     }
     // fscrypt:TODO: go through all DE directories, ensure that all user dirs have the
     // correct policy set on them, and that no rogue ones exist.
@@ -475,6 +486,7 @@ static bool load_all_de_keys() {
 
 // Attempt to reinstall CE keys for users that we think are unlocked.
 static bool try_reload_ce_keys() {
+    LOG(INFO) << "try_reload_ce_keys";
     for (const auto& it : s_ce_policies) {
         if (!android::vold::reloadKeyFromSessionKeyring(DATA_MNT_POINT, it.second)) {
             LOG(ERROR) << "Failed to load CE key from session keyring for user " << it.first;
@@ -488,6 +500,9 @@ bool fscrypt_initialize_systemwide_keys() {
     LOG(INFO) << "fscrypt_initialize_systemwide_keys";
 
     if (!init_data_file_encryption_options()) return false;
+
+    EncryptionOptions options;
+    if (!get_volume_file_encryption_options(&options)) return false;
 
     KeyBuffer device_key;
     if (!retrieveOrGenerateKey(device_key_path, device_key_temp, kEmptyAuthentication,
@@ -508,6 +523,7 @@ bool fscrypt_initialize_systemwide_keys() {
     if (!android::vold::writeStringToFile(options_string, options_filename)) return false;
 
     std::string ref_filename = std::string(DATA_MNT_POINT) + fscrypt_key_ref;
+    de_key_raw_ref = s_device_policy.key_raw_ref;
     if (!android::vold::writeStringToFile(s_device_policy.key_raw_ref, ref_filename)) return false;
     LOG(INFO) << "Wrote system DE key reference to:" << ref_filename;
 
@@ -582,7 +598,7 @@ static bool prepare_special_dirs() {
 bool fscrypt_init_user0_done;
 
 bool fscrypt_init_user0() {
-    LOG(DEBUG) << "fscrypt_init_user0";
+    LOG(INFO) << "fscrypt_init_user0";
 
     if (IsFbeEnabled()) {
         if (!prepare_dir(user_key_dir, 0700, AID_ROOT, AID_ROOT)) return false;
@@ -799,7 +815,7 @@ bool fscrypt_set_user_key_protection(userid_t user_id, const std::string& secret
         // then we are setting the protection on an existing key.  This happens
         // at upgrade time, when CE keys that were previously protected by
         // kEmptyAuthentication are encrypted by the user's synthetic password.
-        LOG(DEBUG) << "CE key already exists on-disk; re-protecting it with the given secret";
+        LOG(INFO) << "CE key already exists on-disk; re-protecting it with the given secret";
         if (!read_and_fixate_user_ce_key(user_id, kEmptyAuthentication, &ce_key)) {
             LOG(ERROR) << "Failed to retrieve CE key for user " << user_id << " using empty auth";
             // Before failing, also check whether the key is already protected
@@ -874,7 +890,7 @@ std::vector<int> fscrypt_get_unlocked_users() {
 
 // TODO: rename to 'install' for consistency, and take flags to know which keys to install
 bool fscrypt_unlock_user_key(userid_t user_id, int serial, const std::string& secret_hex) {
-    LOG(DEBUG) << "fscrypt_unlock_user_key " << user_id << " serial=" << serial;
+    LOG(INFO) << "fscrypt_unlock_user_key " << user_id << " serial=" << serial;
     if (IsFbeEnabled()) {
         if (s_ce_policies.count(user_id) != 0) {
             LOG(WARNING) << "Tried to unlock already-unlocked key for user " << user_id;
@@ -912,7 +928,7 @@ static bool prepare_subdirs(const std::string& action, const std::string& volume
 
 bool fscrypt_prepare_user_storage(const std::string& volume_uuid, userid_t user_id, int serial,
                                   int flags) {
-    LOG(DEBUG) << "fscrypt_prepare_user_storage for volume " << escape_empty(volume_uuid)
+    LOG(INFO) << "fscrypt_prepare_user_storage for volume " << escape_empty(volume_uuid)
                << ", user " << user_id << ", serial " << serial << ", flags " << flags;
 
     // Internal storage must be prepared before adoptable storage, since the
@@ -979,7 +995,6 @@ bool fscrypt_prepare_user_storage(const std::string& volume_uuid, userid_t user_
         if (!prepare_dir_with_policy(user_de_path, 0771, AID_SYSTEM, AID_SYSTEM, de_policy))
             return false;
     }
-
     if (flags & android::os::IVold::STORAGE_FLAG_CE) {
         // CE_n key
         EncryptionPolicy ce_policy;
@@ -988,6 +1003,7 @@ bool fscrypt_prepare_user_storage(const std::string& volume_uuid, userid_t user_
         auto vendor_ce_path = android::vold::BuildDataVendorCePath(user_id);
         auto media_ce_path = android::vold::BuildDataMediaCePath(volume_uuid, user_id);
         auto user_ce_path = android::vold::BuildDataUserCePath(volume_uuid, user_id);
+        LOG(INFO) << "fscrypt_prepare_user_storage";
 
         if (IsFbeEnabled()) {
             if (volume_uuid.empty()) {
@@ -1135,4 +1151,15 @@ bool fscrypt_destroy_volume_keys(const std::string& volume_uuid) {
     res &= destroy_volume_keys("/data/misc_ce", volume_uuid);
     res &= destroy_volume_keys("/data/misc_de", volume_uuid);
     return res;
+}
+
+bool lookup_key_ref(const std::map<userid_t, android::fscrypt::EncryptionPolicy>& key_map, userid_t user_id,
+                           std::string* raw_ref) {
+    auto refi = key_map.find(user_id);
+    if (refi == key_map.end()) {
+        LOG(ERROR) << "Cannot find key for " << user_id;
+        return false;
+    }
+    *raw_ref = refi->second.key_raw_ref;
+    return true;
 }

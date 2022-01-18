@@ -56,6 +56,9 @@ bool storeKeyAtomically(const std::string& key_path, const std::string& tmp_path
                         const KeyAuthentication& auth, const KeyBuffer& key);
 
 // Retrieve the key from the named directory.
+//
+// If the key is wrapped by a Keymaster key that requires an upgrade, then that
+// Keymaster key is upgraded.  
 bool retrieveKey(const std::string& dir, const KeyAuthentication& auth, KeyBuffer* key);
 
 // Securely destroy the key stored in the named directory and delete the directory.

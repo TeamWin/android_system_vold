@@ -88,7 +88,7 @@ void DoCheckpointCommittedWork() {
     // operate on key directories.
     std::lock_guard<std::mutex> lock(VolumeManager::Instance()->getCryptLock());
 
-    DeferredCommitKeystoreKeys();
+    // DeferredCommitKeystoreKeys();
     fscrypt_deferred_fixate_ce_keys();
 }
 
