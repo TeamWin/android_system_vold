@@ -158,3 +158,44 @@ extern "C" bool fscrypt_policy_get_struct(const char *directory, struct fscrypt_
     close(fd);
     return true;
 }
+<<<<<<< HEAD   (9349e6 keystorage: do not upgrade keys in TWRP)
+=======
+
+#ifdef TW_INCLUDE_CRYPTO
+#ifdef USE_FSCRYPT_POLICY_V1
+extern "C" bool Get_Encryption_Policy(struct fscrypt_policy_v1 &policy, std::string path) {
+#else
+extern "C" bool Get_Encryption_Policy(struct fscrypt_policy_v2 &policy, std::string path) {
+#endif
+	if (!android::vold::pathExists(path)) {
+		LOGERR("Unable to find %s to get policy\n", path.c_str());
+		return false;
+	}
+	if (!fscrypt_policy_get_struct(path.c_str(), &policy)) {
+		LOGERR("No policy set for path %s\n", path.c_str());
+		return false;
+	}
+	return true;
+}
+
+#ifdef USE_FSCRYPT_POLICY_V1
+extern "C" bool Set_Encryption_Policy(std::string path, struct fscrypt_policy_v1 &policy) {
+#else
+extern "C" bool Set_Encryption_Policy(std::string path, struct fscrypt_policy_v2 &policy) {
+#endif
+	if (!android::vold::pathExists(path)) {
+		LOGERR("unable to find %s to set policy\n", path.c_str());
+		return false;
+	}
+	uint8_t binary_policy[FS_KEY_DESCRIPTOR_SIZE];
+	char policy_hex[FSCRYPT_KEY_IDENTIFIER_HEX_SIZE];
+	bytes_to_hex(binary_policy, FS_KEY_DESCRIPTOR_SIZE, policy_hex);
+	if (!fscrypt_policy_set_struct(path.c_str(), &policy)) {
+		LOGERR("unable to set policy for path: %s\n", path.c_str());
+		return false;
+	}
+	return true;
+}
+#endif
+
+>>>>>>> CHANGE (c0dab3 fscrypt: move functionality to libvold)

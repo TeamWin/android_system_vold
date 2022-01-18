@@ -41,5 +41,11 @@ bool fscrypt_prepare_user_storage(const std::string& volume_uuid, userid_t user_
 bool fscrypt_destroy_user_storage(const std::string& volume_uuid, userid_t user_id, int flags);
 
 bool fscrypt_destroy_volume_keys(const std::string& volume_uuid);
+<<<<<<< HEAD   (9349e6 keystorage: do not upgrade keys in TWRP)
 bool lookup_key_ref(const std::map<userid_t, android::fscrypt::EncryptionPolicy>& key_map, userid_t user_id,
                            std::string* raw_ref);
+=======
+bool is_metadata_wrapped_key_supported();
+bool lookup_key_ref(const std::map<userid_t, android::fscrypt::EncryptionPolicy>& key_map, userid_t user_id,
+                           std::string* raw_ref);
+>>>>>>> CHANGE (c0dab3 fscrypt: move functionality to libvold)

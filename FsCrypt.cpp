@@ -202,8 +202,12 @@ static bool read_and_fixate_user_ce_key(userid_t user_id,
     auto const directory_path = get_ce_key_directory_path(user_id);
     auto const paths = get_ce_key_paths(directory_path);
     for (auto const ce_key_path : paths) {
+<<<<<<< HEAD   (9349e6 keystorage: do not upgrade keys in TWRP)
         LOG(DEBUG) << "Trying user CE key " << ce_key_path;
         LOG(INFO) <<"fscrypt::read_and_fixate_user_ce_key::retrieveKey";
+=======
+        LOG(INFO) << "Trying user CE key " << ce_key_path;
+>>>>>>> CHANGE (c0dab3 fscrypt: move functionality to libvold)
         if (retrieveKey(ce_key_path, auth, ce_key)) {
             LOG(DEBUG) << "Successfully retrieved key";
             fixate_user_ce_key(directory_path, ce_key_path, paths);
@@ -308,7 +312,7 @@ static bool read_and_install_user_ce_key(userid_t user_id,
     EncryptionPolicy ce_policy;
     if (!install_storage_key(DATA_MNT_POINT, options, ce_key, &ce_policy)) return false;
     s_ce_policies[user_id] = ce_policy;
-    LOG(DEBUG) << "Installed ce key for user " << user_id;
+    LOG(INFO) << "Installed ce key for user " << user_id;
     return true;
 }
 
@@ -464,6 +468,7 @@ bool fscrypt_initialize_systemwide_keys() {
     if (!android::vold::writeStringToFile(options_string, options_filename)) return false;
 
     std::string ref_filename = std::string(DATA_MNT_POINT) + fscrypt_key_ref;
+    de_key_raw_ref = device_policy.key_raw_ref;
     if (!android::vold::writeStringToFile(device_policy.key_raw_ref, ref_filename)) return false;
     LOG(INFO) << "Wrote system DE key reference to:" << ref_filename;
 
@@ -1015,4 +1020,8 @@ bool lookup_key_ref(const std::map<userid_t, android::fscrypt::EncryptionPolicy>
     }
     *raw_ref = refi->second.key_raw_ref;
     return true;
+<<<<<<< HEAD   (9349e6 keystorage: do not upgrade keys in TWRP)
 }
+=======
+}
+>>>>>>> CHANGE (c0dab3 fscrypt: move functionality to libvold)

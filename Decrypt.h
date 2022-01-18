@@ -34,6 +34,10 @@ static constexpr int NAMESPACE_LOCKSETTINGS = 103;
 
 namespace android {
 namespace keystore {
+<<<<<<< HEAD   (9349e6 keystorage: do not upgrade keys in TWRP)
+=======
+    void copySqliteDb();
+>>>>>>> CHANGE (c0dab3 fscrypt: move functionality to libvold)
     int Get_Password_Type(const userid_t user_id, std::string& filename);
     bool Decrypt_DE();
     bool Decrypt_User(const userid_t user_id, const std::string& Password);

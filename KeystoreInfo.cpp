@@ -46,10 +46,17 @@ std::string KeystoreInfo::uint2hex(int64_t num) {
 
 std::string KeystoreInfo::getHandle(const userid_t user_id) {
 	int rc = 0;
+<<<<<<< HEAD   (9349e6 keystorage: do not upgrade keys in TWRP)
    	sqlite3 *db;
 	sqlite3_stmt *stmt;
 	char *err_msg = 0;
   	
+=======
+	sqlite3 *db;
+	sqlite3_stmt *stmt;
+	char *err_msg = 0;
+
+>>>>>>> CHANGE (c0dab3 fscrypt: move functionality to libvold)
 	rc = sqlite3_open("/data/system/locksettings.db", &db);
 	if (rc) {
 		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));

@@ -334,12 +334,21 @@ static KeymasterOperation BeginKeymasterOp(Keymaster& keymaster, const std::stri
     inParams.append(opParams.begin(), opParams.end());
 
     auto blob_file = dir + "/" + kFn_keymaster_key_blob;
+<<<<<<< HEAD   (9349e6 keystorage: do not upgrade keys in TWRP)
     std::string blob_dir(kFn_keymaster_key_blob);
     std::string temp_dir = "/tmp/" + blob_dir + "/";
     if (TEMP_FAILURE_RETRY(mkdir(temp_dir.c_str(), 0700)) == -1) {
         PLOG(ERROR) << "key mkdir " << temp_dir;
     }
 
+=======
+    LOG(INFO) << "reading blob_file: " << blob_file;
+    std::string blob_dir(kFn_keymaster_key_blob);
+    std::string temp_dir = "/tmp/" + blob_dir + "/";
+    if (TEMP_FAILURE_RETRY(mkdir(temp_dir.c_str(), 0700)) == -1) {
+        PLOG(ERROR) << "key mkdir " << temp_dir;
+    }
+>>>>>>> CHANGE (c0dab3 fscrypt: move functionality to libvold)
     auto upgraded_blob_file = temp_dir + kFn_keymaster_key_blob;
     // auto upgraded_blob_file = dir + "/" + kFn_keymaster_key_blob_upgraded;
     std::lock_guard<std::mutex> lock(key_upgrade_lock);
@@ -353,9 +362,14 @@ static KeymasterOperation BeginKeymasterOp(Keymaster& keymaster, const std::stri
     //     if (!readFileToString(upgraded_blob_file, &blob)) return KeymasterOperation();
     // } else {
         // DeleteUpgradedKey(keymaster, upgraded_blob_file);
+<<<<<<< HEAD   (9349e6 keystorage: do not upgrade keys in TWRP)
         if (!readFileToString(blob_file, &blob)) return KeymasterOperation();
     // }
 
+=======
+    if (!readFileToString(blob_file, &blob)) return KeymasterOperation();
+    // }
+>>>>>>> CHANGE (c0dab3 fscrypt: move functionality to libvold)
     auto opHandle = keymaster.begin(blob, inParams, outParams);
     if (!opHandle) return opHandle;
 
