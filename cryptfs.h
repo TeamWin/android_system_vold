@@ -24,6 +24,17 @@
 
 int cryptfs_setup_ext_volume(const char* label, const char* real_blkdev,
                              const android::vold::KeyBuffer& key, std::string* out_crypto_blkdev);
+<<<<<<< HEAD   (d7dbfc Snap for 8756258 from d96b2ac076f0d82d3c2068cf4dda134bedb11d)
+=======
+int cryptfs_getfield(const char* fieldname, char* value, int len);
+int cryptfs_setfield(const char* fieldname, const char* value);
+int cryptfs_mount_default_encrypted(void);
+int cryptfs_get_password_type(void);
+int delete_crypto_blk_dev(const std::string& name);
+const char* cryptfs_get_password(void);
+void cryptfs_clear_password(void);
+int cryptfs_isConvertibleToFBE(void);
+>>>>>>> CHANGE (c0dab3 fscrypt: move functionality to libvold)
 const android::vold::KeyGeneration cryptfs_get_keygen();
 
 #endif /* ANDROID_VOLD_CRYPTFS_H */
