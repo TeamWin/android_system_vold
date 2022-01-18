@@ -1558,7 +1558,7 @@ static int create_crypto_blk_dev(struct crypt_mnt_ftr* crypt_ftr, const unsigned
     return 0;
 }
 
-static int delete_crypto_blk_dev(const std::string& name) {
+int delete_crypto_blk_dev(const std::string& name) {
     bool ret;
     auto& dm = DeviceMapper::Instance();
     // TODO(b/149396179) there appears to be a race somewhere in the system where trying
