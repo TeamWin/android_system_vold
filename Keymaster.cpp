@@ -199,21 +199,25 @@ KeymasterOperation Keymaster::begin(const std::string& key, const km::Authorizat
             std::optional<std::vector<uint8_t>>(std::vector<uint8_t>(key.begin(), key.end()));
 
     ks2::CreateOperationResponse cor;
-    auto rc = securityLevel->createOperation(keyDesc, inParams.vector_data(), true, &cor);
+    LOG(INFO) << "begin::1";
+    auto rc = securityLevel->createOperation(keyDesc, inParams.vector_data(), false, &cor);
+    LOG(INFO) << "begin::2";
     if (logKeystore2ExceptionIfPresent(rc, "createOperation")) {
         if (rc.getExceptionCode() == EX_SERVICE_SPECIFIC)
             return KeymasterOperation((km::ErrorCode)rc.getServiceSpecificError());
         else
             return KeymasterOperation();
     }
+    LOG(INFO) << "begin::3";
 
     if (!cor.iOperation) {
         LOG(ERROR) << "keystore2 createOperation didn't return an operation";
         return KeymasterOperation();
     }
+    LOG(INFO) << "begin::4";
 
     if (outParams && cor.parameters) *outParams = cor.parameters->keyParameter;
-
+    LOG(INFO) << "begin::5";
     return KeymasterOperation(cor.iOperation, cor.upgradedBlob);
 }
 
