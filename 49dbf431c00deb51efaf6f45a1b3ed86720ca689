@@ -87,6 +87,30 @@
       },
       "revId": "49dbf431c00deb51efaf6f45a1b3ed86720ca689",
       "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "df608ea5_f17d42c4",
+        "filename": "FsCrypt.cpp",
+        "patchSetId": 3
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 487
+      },
+      "writtenOn": "2022-06-03T13:29:09Z",
+      "side": 1,
+      "message": "Once those lines are commented out, everything works fine again.",
+      "parentUuid": "d24d7fc7_805a7f31",
+      "range": {
+        "startLine": 261,
+        "startChar": 0,
+        "endLine": 264,
+        "endChar": 5
+      },
+      "revId": "49dbf431c00deb51efaf6f45a1b3ed86720ca689",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
     }
   ]
 }
