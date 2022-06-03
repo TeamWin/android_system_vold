@@ -183,6 +183,30 @@
       },
       "revId": "49dbf431c00deb51efaf6f45a1b3ed86720ca689",
       "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a49cddb_b76c7909",
+        "filename": "FsCrypt.cpp",
+        "patchSetId": 3
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 487
+      },
+      "writtenOn": "2022-06-03T23:16:50Z",
+      "side": 1,
+      "message": "Something seems to have gone awry with the latest vold patch as far as miatoll is concerned. Now, some ROMs require the wrappedkey flags to be set in the fstab, otherwise they will not decrypt. Other ROMs require the wrappedkey flags to NOT be set in the fstab, otherwise they too will not decrypt.\n\nI have reverted to an earlier patch, which decrypts all ROMs, with the wrappedkey flags enabled.",
+      "parentUuid": "f64f6266_15ca38a6",
+      "range": {
+        "startLine": 261,
+        "startChar": 0,
+        "endLine": 264,
+        "endChar": 5
+      },
+      "revId": "49dbf431c00deb51efaf6f45a1b3ed86720ca689",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
     }
   ]
 }
