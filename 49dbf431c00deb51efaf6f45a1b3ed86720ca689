@@ -231,6 +231,30 @@
       },
       "revId": "49dbf431c00deb51efaf6f45a1b3ed86720ca689",
       "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e4070622_4f2b2269",
+        "filename": "FsCrypt.cpp",
+        "patchSetId": 3
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 487
+      },
+      "writtenOn": "2022-06-04T06:16:09Z",
+      "side": 1,
+      "message": "No. I have ascertained that this isn\u0027t the real cause of the problem. Removing it only cures the problem for those ROMs that require the wrappedkey flags to *not* be set - but the real solution for those ROMs is to change the fstab. For the ROMs that do require the wrappedkey flags, removing this code breaks decryption. \n\nThere never used to be a problem at all with this device (miatoll); Ig the real problem may not even be in vold at all, but whatever it is, it happened in the past week or so, following some repo syncs.",
+      "parentUuid": "9c1e9fd4_bd55b87d",
+      "range": {
+        "startLine": 261,
+        "startChar": 0,
+        "endLine": 264,
+        "endChar": 5
+      },
+      "revId": "49dbf431c00deb51efaf6f45a1b3ed86720ca689",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
     }
   ]
 }
