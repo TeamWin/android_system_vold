@@ -309,6 +309,9 @@ static struct crypt_persist_data* persist_data = NULL;
 
 static int previous_type;
 
+static char twrp_key_fname[PROPERTY_VALUE_MAX] = "";
+static char twrp_real_blkdev[PROPERTY_VALUE_MAX] = "";
+
 #ifdef CONFIG_HW_DISK_ENCRYPTION
 static int scrypt_keymaster(const char *passwd, const unsigned char *salt,
                             unsigned char *ikey, void *params);
@@ -611,6 +614,12 @@ static int keymaster_sign_object_for_cryptfs_scrypt(struct crypt_mnt_ftr* ftr, u
     return 0;
 }
 
+void set_partition_data(const char* block_device, const char* key_location)
+{
+  strncpy(twrp_key_fname, key_location, strlen(key_location));
+  strncpy(twrp_real_blkdev, block_device, strlen(block_device));
+}
+
 /* This signs the given object using the keymaster key. */
 static int keymaster_sign_object(struct crypt_mnt_ftr* ftr, const unsigned char* object,
                                  const size_t object_size, unsigned char** signature,
@@ -746,6 +755,7 @@ static uint64_t get_fs_size(const char* dev) {
 }
 
 static void get_crypt_info(std::string* key_loc, std::string* real_blk_device) {
+    /*
     for (const auto& entry : fstab_default) {
         if (!entry.fs_mgr_flags.vold_managed &&
             (entry.fs_mgr_flags.crypt || entry.fs_mgr_flags.force_crypt ||
@@ -759,6 +769,14 @@ static void get_crypt_info(std::string* key_loc, std::string* real_blk_device) {
             return;
         }
     }
+    */
+    if (key_loc != nullptr) {
+        *key_loc = std::string(twrp_key_fname);
+    }
+    if (real_blk_device != nullptr) {
+        *real_blk_device = std::string(twrp_real_blkdev);
+    }
+    return;
 }
 
 static int get_crypt_ftr_info(char** metadata_fname, off64_t* off) {
@@ -1256,6 +1274,16 @@ err2:
 err:
     close(fd);
     return -1;
+}
+
+int cryptfs_check_footer()
+{
+    int rc = -1;
+    struct crypt_mnt_ftr crypt_ftr;
+
+    rc = get_crypt_ftr_and_key(&crypt_ftr);
+
+    return rc;
 }
 
 /* Convert a binary key of specified length into an ascii hex string equivalent,
