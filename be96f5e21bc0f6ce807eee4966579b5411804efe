@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dbbd865f_10659dc3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 938
+      },
+      "writtenOn": "2022-06-10T05:11:24Z",
+      "side": 1,
+      "message": "cherry-picked from twelve-qcom-fde topic from LOS Gerrit.",
+      "revId": "be96f5e21bc0f6ce807eee4966579b5411804efe",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    }
+  ]
+}
