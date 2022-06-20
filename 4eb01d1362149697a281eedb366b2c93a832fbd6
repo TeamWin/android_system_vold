@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "25e96897_02403be4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1
+      },
+      "writtenOn": "2022-06-20T22:13:33Z",
+      "side": 1,
+      "message": "What patchset imports\nerror: system/vold/Android.bp:172:29: unrecognized property \"product_variables.device_support_hwfde\"",
+      "revId": "4eb01d1362149697a281eedb366b2c93a832fbd6",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    }
+  ]
+}
