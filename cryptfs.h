@@ -85,4 +85,7 @@ void cryptfs_clear_password(void);
 int cryptfs_isConvertibleToFBE(void);
 const android::vold::KeyGeneration cryptfs_get_keygen();
 
+void set_partition_data(const char* block_device, const char* key_location);
+int cryptfs_check_footer();
+
 #endif /* ANDROID_VOLD_CRYPTFS_H */
