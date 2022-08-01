@@ -34,6 +34,24 @@
       "parentUuid": "66fd4f21_60fa03c0",
       "revId": "89a0729070ebc3223b97138624ff739199abe537",
       "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad6531f0_bea5b9ba",
+        "filename": "Android.bp",
+        "patchSetId": 8
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 783
+      },
+      "writtenOn": "2022-08-01T06:21:23Z",
+      "side": 1,
+      "message": "see FileBasedEncryptionPolicyTest.cpp\n\nAfter analysis\nThe factory is v1 for Android 10\nThe factory is Android 11 and above is v2\n\nYou can use configure: TW_USE_FSCRYPT_POLICY :\u003d 1",
+      "parentUuid": "1f87beb3_9ebe601d",
+      "revId": "89a0729070ebc3223b97138624ff739199abe537",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
     }
   ]
 }
