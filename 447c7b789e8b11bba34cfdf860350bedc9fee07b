@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "56e6df3f_4fc2a129",
+        "filename": "Decrypt.cpp",
+        "patchSetId": 12
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 783
+      },
+      "writtenOn": "2022-08-10T06:30:06Z",
+      "side": 1,
+      "message": "There is a logical error here.\nAlso, there are .spblob and .secdis files that require the same logic.\nafter modification:\n\t\tbool found_pwd_file \u003d false;\n\t\tfor (auto\u0026\u0026 pwd_file:pwd_file_paths) {\n\t\t\t\tif (!android::base::ReadFileToString(pwd_file, \u0026pwd_data)) {\n\t\t\t\t\tprintf(\"Failed to read \u0027%s\u0027\\n\", pwd_file.c_str());\n\t\t\t\t} else {\n\t\t\t\t\tfound_pwd_file \u003d true;\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t}",
+      "revId": "447c7b789e8b11bba34cfdf860350bedc9fee07b",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    }
+  ]
+}
