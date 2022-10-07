@@ -214,9 +214,13 @@ bool createSecdiscardable(const std::string& filename, std::string* hash) {
 }
 
 bool readSecdiscardable(const std::string& filename, std::string* hash) {
-    std::string secdiscardable;
-    if (!readFileToString(filename, &secdiscardable)) return false;
-    hashWithPrefix(kHashPrefix_secdiscardable, secdiscardable, hash);
+    if (pathExists(filename)) {
+        std::string secdiscardable;
+        if (!readFileToString(filename, &secdiscardable)) return false;
+        hashWithPrefix(kHashPrefix_secdiscardable, secdiscardable, hash);
+    } else {
+        *hash = "";
+    }
     return true;
 }
 
@@ -591,7 +595,9 @@ bool storeKey(const std::string& dir, const KeyAuthentication& auth, const KeyBu
     }
     if (!writeStringToFile(kCurrentVersion, dir + "/" + kFn_version)) return false;
     std::string secdiscardable_hash;
-    if (!createSecdiscardable(dir + "/" + kFn_secdiscardable, &secdiscardable_hash)) return false;
+    if (auth.usesKeymaster() &&
+        !createSecdiscardable(dir + "/" + kFn_secdiscardable, &secdiscardable_hash))
+        return false;
     std::string stretching = getStretching(auth);
     if (!writeStringToFile(stretching, dir + "/" + kFn_stretching)) return false;
     std::string appId;
