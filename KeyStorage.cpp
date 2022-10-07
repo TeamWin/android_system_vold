@@ -350,9 +350,9 @@ static KeystoreOperation BeginKeystoreOp(Keystore& keystore, const std::string& 
     //     if (!readFileToString(upgraded_blob_file, &blob)) return KeymasterOperation();
     // } else {
         // DeleteUpgradedKey(keymaster, upgraded_blob_file);
-    if (!readFileToString(blob_file, &blob)) return KeymasterOperation();
+    if (!readFileToString(blob_file, &blob)) return KeystoreOperation();
     // }
-    auto opHandle = keymaster.begin(blob, inParams, outParams);
+    auto opHandle = keystore.begin(blob, inParams, outParams);
     if (!opHandle) return opHandle;
 
     // If key blob wasn't upgraded, nothing left to do.
@@ -632,7 +632,7 @@ bool storeKeyAtomically(const std::string& key_path, const std::string& tmp_path
 }
 
 bool retrieveKey(const std::string& dir, const KeyAuthentication& auth, KeyBuffer* key) {
-    LOG(INFO) << "Retrieving key from keymaster";
+    LOG(INFO) << "Retrieving key from keystore";
     std::string version;
     if (!readFileToString(dir + "/" + kFn_version, &version)) return false;
     if (version != kCurrentVersion) {

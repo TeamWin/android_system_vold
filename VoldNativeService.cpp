@@ -40,7 +40,6 @@
 #include "VoldNativeServiceValidation.h"
 #include "VoldUtil.h"
 #include "VolumeManager.h"
-#include "cryptfs.h"
 #include "incfs.h"
 
 using namespace std::literals;

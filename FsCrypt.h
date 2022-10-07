@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+#include <map>
 #include <string>
 #include <vector>
 
 #include <cutils/multiuser.h>
+#include <fscrypt/fscrypt.h>
 
 bool fscrypt_initialize_systemwide_keys();
 

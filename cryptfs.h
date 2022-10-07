@@ -19,9 +19,61 @@
 
 #include <string>
 
+#include <linux/types.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <cutils/properties.h>
+
 #include "KeyBuffer.h"
 #include "KeyUtil.h"
 
+#define CRYPT_FOOTER_OFFSET 0x4000
+
+#ifdef CONFIG_HW_DISK_ENCRYPTION
+/* This flag is used to transition from L->M upgrade. L release passed
+ * a byte for every nible of user password while M release is passing
+ * ascii value of user password.
+ * Random flag value is chosen so that it does not conflict with other use cases
+ */
+#define CRYPT_ASCII_PASSWORD_UPDATED 0x1000
+#endif
+
+/* Return values for cryptfs_crypto_complete */
+#define CRYPTO_COMPLETE_NOT_ENCRYPTED 1
+#define CRYPTO_COMPLETE_ENCRYPTED 0
+#define CRYPTO_COMPLETE_BAD_METADATA (-1)
+#define CRYPTO_COMPLETE_PARTIAL (-2)
+#define CRYPTO_COMPLETE_INCONSISTENT (-3)
+#define CRYPTO_COMPLETE_CORRUPT (-4)
+
+/* Return values for cryptfs_getfield */
+#define CRYPTO_GETFIELD_OK 0
+#define CRYPTO_GETFIELD_ERROR_NO_FIELD (-1)
+#define CRYPTO_GETFIELD_ERROR_OTHER (-2)
+#define CRYPTO_GETFIELD_ERROR_BUF_TOO_SMALL (-3)
+
+/* Return values for cryptfs_setfield */
+#define CRYPTO_SETFIELD_OK 0
+#define CRYPTO_SETFIELD_ERROR_OTHER (-1)
+#define CRYPTO_SETFIELD_ERROR_FIELD_TOO_LONG (-2)
+#define CRYPTO_SETFIELD_ERROR_VALUE_TOO_LONG (-3)
+
+/* Return values for persist_del_key */
+#define PERSIST_DEL_KEY_OK 0
+#define PERSIST_DEL_KEY_ERROR_OTHER (-1)
+#define PERSIST_DEL_KEY_ERROR_NO_FIELD (-2)
+
+// Exposed for testing only
+int match_multi_entry(const char* key, const char* field, unsigned index);
+
+int cryptfs_crypto_complete(void);
+int cryptfs_check_passwd(const char* pw);
+int cryptfs_verify_passwd(const char* pw);
+int cryptfs_restart(void);
+int cryptfs_enable(int type, const char* passwd, int no_ui);
+int cryptfs_changepw(int type, const char* currentpw, const char* newpw);
+int cryptfs_enable_default(int no_ui);
 int cryptfs_setup_ext_volume(const char* label, const char* real_blkdev,
                              const android::vold::KeyBuffer& key, std::string* out_crypto_blkdev);
 int cryptfs_getfield(const char* fieldname, char* value, int len);
@@ -33,5 +85,8 @@ const char* cryptfs_get_password(void);
 void cryptfs_clear_password(void);
 int cryptfs_isConvertibleToFBE(void);
 const android::vold::KeyGeneration cryptfs_get_keygen();
+
+void set_partition_data(const char* block_device, const char* key_location);
+int cryptfs_check_footer();
 
 #endif /* ANDROID_VOLD_CRYPTFS_H */
