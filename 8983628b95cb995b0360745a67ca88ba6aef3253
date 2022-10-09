@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2d6eb0a_af0bb149",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1
+      },
+      "writtenOn": "2022-10-09T14:21:47Z",
+      "side": 1,
+      "message": "I believe this is taken care of here https://gerrit.twrp.me/c/android_system_vold/+/6029/1",
+      "revId": "8983628b95cb995b0360745a67ca88ba6aef3253",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    }
+  ]
+}
