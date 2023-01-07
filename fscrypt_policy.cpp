@@ -90,49 +90,29 @@ extern "C" bool fscrypt_set_mode() {
     return true;
 }
 
-#ifdef USE_FSCRYPT_POLICY_V1
-extern "C" bool fscrypt_policy_set_struct(const char *directory, const struct fscrypt_policy_v1 *fep) {
-#else
-extern "C" bool fscrypt_policy_set_struct(const char *directory, const struct fscrypt_policy_v2 *fep) {
-#endif
+extern "C" bool fscrypt_policy_set_struct(const char *directory, fscrypt_policy *fep) {
     int fd = open(directory, O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
     if (fd == -1) {
         printf("failed to open %s\n", directory);
         PLOG(ERROR) << "Failed to open directory " << directory;
         return false;
     }
-    if (android::vold::isFsKeyringSupported()) {
-        if (ioctl(fd, FS_IOC_SET_ENCRYPTION_POLICY, fep)) {
-            PLOG(ERROR) << "Failed to set encryption policy for " << directory;
-            close(fd);
-            return false;
-        }
-    } else {
-        if (ioctl(fd, FS_IOC_SET_ENCRYPTION_POLICY, fep)) {
-            PLOG(ERROR) << "Failed to set encryption policy for " << directory;
-            close(fd);
-            return false;
-        }
+    if (ioctl(fd, FS_IOC_SET_ENCRYPTION_POLICY, get_policy(fep))) {
+        PLOG(ERROR) << "Failed to set encryption policy for " << directory;
+        close(fd);
+        return false;
     }
     close(fd);
     return true;
 }
 
-#ifdef USE_FSCRYPT_POLICY_V1
-extern "C" bool fscrypt_policy_get_struct(const char *directory, struct fscrypt_policy_v1 *fep) {
-#else
-extern "C" bool fscrypt_policy_get_struct(const char *directory, struct fscrypt_policy_v2 *fep) {
-#endif
+extern "C" bool fscrypt_policy_get_struct(const char *directory, fscrypt_policy *fep) {
     int fd = open(directory, O_DIRECTORY | O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
     if (fd == -1) {
         PLOG(ERROR) << "Failed to open directory " << directory;
         return false;
     }
-#ifdef USE_FSCRYPT_POLICY_V1
-    memset(fep, 0, sizeof(fscrypt_policy_v1));
-#else
-    memset(fep, 0, sizeof(fscrypt_policy_v2));
-#endif
+    memset(fep, 0, sizeof(fscrypt_policy));
     struct fscrypt_get_policy_ex_arg ex_policy = {0};
 
     if (android::vold::isFsKeyringSupported()) {
@@ -142,57 +122,78 @@ extern "C" bool fscrypt_policy_get_struct(const char *directory, struct fscrypt_
             close(fd);
             return false;
         }
-#ifdef USE_FSCRYPT_POLICY_V1
-        memcpy(fep, &ex_policy.policy.v1, sizeof(ex_policy.policy.v1));
-#else
-        memcpy(fep, &ex_policy.policy.v2, sizeof(ex_policy.policy.v2));
-#endif
     } else {
         if (ioctl(fd, FS_IOC_GET_ENCRYPTION_POLICY, &ex_policy.policy.v1) != 0) {
             PLOG(ERROR) << "Failed to get encryption policy for " << directory;
             close(fd);
             return false;
         }
-        memcpy(fep, &ex_policy.policy.v1, sizeof(ex_policy.policy.v1));
     }
+    memcpy(fep, &ex_policy.policy, sizeof(ex_policy.policy));
     close(fd);
     return true;
 }
 
-#ifdef TW_INCLUDE_CRYPTO
-#ifdef USE_FSCRYPT_POLICY_V1
-extern "C" bool Get_Encryption_Policy(struct fscrypt_policy_v1 &policy, std::string path) {
-#else
-extern "C" bool Get_Encryption_Policy(struct fscrypt_policy_v2 &policy, std::string path) {
-#endif
-	if (!android::vold::pathExists(path)) {
-		LOGERR("Unable to find %s to get policy\n", path.c_str());
-		return false;
+extern "C" uint8_t* get_policy_descriptor(fscrypt_policy* fep) {
+	if (!fep) return NULL;
+	switch(fep->version) {
+		case FSCRYPT_POLICY_V1:
+			return fep->v1.master_key_descriptor;
+		case FSCRYPT_POLICY_V2:
+			return fep->v2.master_key_identifier;
+		default:
+			return NULL;
 	}
-	if (!fscrypt_policy_get_struct(path.c_str(), &policy)) {
-		LOGERR("No policy set for path %s\n", path.c_str());
-		return false;
-	}
-	return true;
 }
 
-#ifdef USE_FSCRYPT_POLICY_V1
-extern "C" bool Set_Encryption_Policy(std::string path, struct fscrypt_policy_v1 &policy) {
-#else
-extern "C" bool Set_Encryption_Policy(std::string path, struct fscrypt_policy_v2 &policy) {
-#endif
-	if (!android::vold::pathExists(path)) {
-		LOGERR("unable to find %s to set policy\n", path.c_str());
-		return false;
+extern "C" uint8_t get_policy_size(fscrypt_policy* fep, bool hex) {
+	if (!fep) return 0;
+	switch(fep->version) {
+		case FSCRYPT_POLICY_V1:
+			return hex ? FS_KEY_DESCRIPTOR_SIZE_HEX : FSCRYPT_KEY_DESCRIPTOR_SIZE;
+		case FSCRYPT_POLICY_V2:
+			return hex ? FSCRYPT_KEY_IDENTIFIER_SIZE_HEX : FSCRYPT_KEY_IDENTIFIER_SIZE;
 	}
-	uint8_t binary_policy[FS_KEY_DESCRIPTOR_SIZE];
-	char policy_hex[FSCRYPT_KEY_IDENTIFIER_HEX_SIZE];
-	bytes_to_hex(binary_policy, FS_KEY_DESCRIPTOR_SIZE, policy_hex);
-	if (!fscrypt_policy_set_struct(path.c_str(), &policy)) {
-		LOGERR("unable to set policy for path: %s\n", path.c_str());
-		return false;
-	}
-	return true;
+	return 0;
 }
-#endif
 
+extern "C" void* get_policy(const fscrypt_policy *fep) {
+	if (!fep) return NULL;
+	switch(fep->version) {
+		case FSCRYPT_POLICY_V1:
+			return (void*)&(fep->v1);
+		case FSCRYPT_POLICY_V2:
+			return (void*)&(fep->v2);
+	}
+	return NULL;
+}
+
+extern "C" int fscrypt_policy_size(const fscrypt_policy *fep) {
+	switch (fep->version) {
+		case FSCRYPT_POLICY_V1:
+			return sizeof(fep->v1);
+		case FSCRYPT_POLICY_V2:
+			return sizeof(fep->v2);
+	}
+	return 0;
+}
+
+void get_policy_content(fscrypt_policy* fep, char* content) {
+	if (!fep || !content) return;
+	switch(fep->version) {
+		case FSCRYPT_POLICY_V1:
+			sprintf(content, "%i %i %i %i %s", (int)fep->v1.version,
+				(int)fep->v1.contents_encryption_mode,
+				(int)fep->v1.filenames_encryption_mode,
+				(int)fep->v1.flags,
+				fep->v1.master_key_descriptor);
+			break;
+		case FSCRYPT_POLICY_V2:
+			sprintf(content, "%i %i %i %i %s", (int)fep->v2.version,
+				(int)fep->v2.contents_encryption_mode,
+				(int)fep->v2.filenames_encryption_mode,
+				(int)fep->v2.flags,
+				fep->v2.master_key_identifier);
+			break;
+	}
+}

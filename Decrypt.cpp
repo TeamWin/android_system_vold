@@ -38,7 +38,6 @@
 
 #include <dirent.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
 #include <fstream>
@@ -102,23 +101,13 @@ inline std::string hidlVec2String(const ::keystore::hidl_vec<uint8_t>& value) {
     return std::string(reinterpret_cast<const std::string::value_type*>(&value[0]), value.size());
 }
 
-static bool lookup_ref_key_internal(std::map<userid_t, android::fscrypt::EncryptionPolicy> key_map, const uint8_t* policy, userid_t* user_id) {
-#ifdef USE_FSCRYPT_POLICY_V1
-	char policy_string_hex[FS_KEY_DESCRIPTOR_SIZE_HEX];
-	char key_map_hex[FS_KEY_DESCRIPTOR_SIZE_HEX];
-	bytes_to_hex(policy, FS_KEY_DESCRIPTOR_SIZE, policy_string_hex);
-#else
-	char policy_string_hex[FSCRYPT_KEY_IDENTIFIER_HEX_SIZE];
-	char key_map_hex[FSCRYPT_KEY_IDENTIFIER_HEX_SIZE];
-	bytes_to_hex(policy, FSCRYPT_KEY_IDENTIFIER_SIZE, policy_string_hex);
-#endif
+static bool lookup_ref_key_internal(std::map<userid_t, android::fscrypt::EncryptionPolicy> key_map, const uint8_t* policy, uint8_t size, uint8_t hex_size, userid_t* user_id) {
+	char policy_string_hex[hex_size];
+	char key_map_hex[hex_size];
+	bytes_to_hex(policy, size, policy_string_hex);
 
     for (std::map<userid_t, android::fscrypt::EncryptionPolicy>::iterator it=key_map.begin(); it!=key_map.end(); ++it) {
-#ifdef USE_FSCRYPT_POLICY_V1
-		bytes_to_hex(reinterpret_cast<const uint8_t*>(&it->second.key_raw_ref[0]), FS_KEY_DESCRIPTOR_SIZE, key_map_hex);
-#else
-		bytes_to_hex(reinterpret_cast<const uint8_t*>(&it->second.key_raw_ref[0]), FSCRYPT_KEY_IDENTIFIER_SIZE, key_map_hex);
-#endif
+		bytes_to_hex(reinterpret_cast<const uint8_t*>(&it->second.key_raw_ref[0]), size, key_map_hex);
 		std::string key_map_hex_string = std::string(key_map_hex);
 		if (key_map_hex_string == policy_string_hex) {
             *user_id = it->first;
@@ -128,98 +117,69 @@ static bool lookup_ref_key_internal(std::map<userid_t, android::fscrypt::Encrypt
     return false;
 }
 
-#ifdef USE_FSCRYPT_POLICY_V1
-extern "C" bool lookup_ref_key(fscrypt_policy_v1* fep, uint8_t* policy_type) {
-#else
-extern "C" bool lookup_ref_key(fscrypt_policy_v2* fep, uint8_t* policy_type) {
-#endif
+extern "C" bool lookup_ref_key(fscrypt_policy* fep, uint8_t* policy_type) {
 	userid_t user_id = 0;
 	std::string policy_type_string;
 
-#ifdef USE_FSCRYPT_POLICY_V1
-	char policy_hex[FS_KEY_DESCRIPTOR_SIZE_HEX];
-	bytes_to_hex(fep->master_key_descriptor, FS_KEY_DESCRIPTOR_SIZE, policy_hex);
-	if (std::strncmp((const char*)fep->master_key_descriptor, de_key_raw_ref.c_str(), FS_KEY_DESCRIPTOR_SIZE) == 0) {
-		policy_type_string = SYSTEM_DE_FSCRYPT_POLICY;
+	uint8_t *descriptor = get_policy_descriptor(fep);
+	uint8_t hex_size = get_policy_size(fep, true);
+	uint8_t size = get_policy_size(fep, false);
+	char policy_hex[hex_size];
+	bytes_to_hex(descriptor, size, policy_hex);
+	if (std::strncmp((const char*)descriptor, de_key_raw_ref.c_str(), size) == 0) {
+		policy_type_string = std::to_string(fep->version) + SYSTEM_DE_FSCRYPT_POLICY;
 		memcpy(policy_type, policy_type_string.data(), policy_type_string.size());
 		return true;
 	}
-    if (!lookup_ref_key_internal(s_de_policies, fep->master_key_descriptor, &user_id)) {
-        if (!lookup_ref_key_internal(s_ce_policies, fep->master_key_descriptor, &user_id)) {
-            return false;
-		} else {
-			policy_type_string = USER_CE_FSCRYPT_POLICY + std::to_string(user_id);
-		}
-    } else {
-			policy_type_string = USER_DE_FSCRYPT_POLICY + std::to_string(user_id);
-	}
-#else
-	char policy_hex[FSCRYPT_KEY_IDENTIFIER_HEX_SIZE];
-	bytes_to_hex(fep->master_key_identifier, FSCRYPT_KEY_IDENTIFIER_SIZE, policy_hex);
-	if (std::strncmp((const char*)fep->master_key_identifier, de_key_raw_ref.c_str(), FSCRYPT_KEY_IDENTIFIER_SIZE) == 0) {
-		policy_type_string = SYSTEM_DE_FSCRYPT_POLICY;
-		memcpy(policy_type, policy_type_string.data(), policy_type_string.size());
-		return true;
-	}
-    if (!lookup_ref_key_internal(s_de_policies, fep->master_key_identifier, &user_id)) {
-        if (!lookup_ref_key_internal(s_ce_policies, fep->master_key_identifier, &user_id)) {
-            return false;
-		} else {
-			policy_type_string = USER_CE_FSCRYPT_POLICY + std::to_string(user_id);
-		}
-    } else {
-			policy_type_string = USER_DE_FSCRYPT_POLICY + std::to_string(user_id);
-	}
-#endif
+	if (!lookup_ref_key_internal(s_de_policies, descriptor, size, hex_size, &user_id)) {
+		if (!lookup_ref_key_internal(s_ce_policies, descriptor, size, hex_size, &user_id)) return false;
+		else policy_type_string = std::to_string(fep->version) + USER_CE_FSCRYPT_POLICY + std::to_string(user_id);
+
+	} else policy_type_string = std::to_string(fep->version) + USER_DE_FSCRYPT_POLICY + std::to_string(user_id);
 
 	memcpy(policy_type, policy_type_string.data(), policy_type_string.size());
 	printf("storing policy type: %s\n", policy_type);
-    return true;
+	return true;
 }
 
-extern "C" bool lookup_ref_tar(const uint8_t* policy_type, uint8_t* policy) {
-	std::string policy_type_string = std::string((char *) policy_type);
-#ifdef USE_FSCRYPT_POLICY_V1
-	char policy_hex[FS_KEY_DESCRIPTOR_SIZE_HEX];
-	bytes_to_hex(policy_type, FS_KEY_DESCRIPTOR_SIZE, policy_hex);
-#else
-	char policy_hex[FSCRYPT_KEY_IDENTIFIER_HEX_SIZE];
-	bytes_to_hex(policy_type, FSCRYPT_KEY_IDENTIFIER_SIZE, policy_hex);
-#endif
-
-#ifdef USE_FSCRYPT_POLICY_V1
-	if (policy_type_string.substr(0,1) != FSCRYPT_V1) {
-#else
-	if (policy_type_string.substr(0,1) != FSCRYPT_V2) {
-#endif
-        printf("Unexpected version: %d\n", policy_type[0]);
-        return false;
-    }
-
+extern "C" bool lookup_ref_tar(fscrypt_policy *fep, uint8_t* policy) {
+	if (fep->version < FSCRYPT_POLICY_V1 || fep->version > FSCRYPT_POLICY_V2) {
+		printf("Unexpected version: %d\n", (int)fep->version);
+ 		return false;
+ 	}
+	uint8_t hex_size, size, *descriptor;
+	hex_size = get_policy_size(fep, true);
+	size = get_policy_size(fep, false);
+	descriptor = get_policy_descriptor(fep);
+	std::string policy_type_string = std::string((char *) descriptor);
+	char policy_hex[hex_size];
+	bytes_to_hex(descriptor, size, policy_hex);
 	if (policy_type_string.substr(1, 2) == SYSTEM_DE_KEY) {
-        memcpy(policy, de_key_raw_ref.data(), de_key_raw_ref.size());
-        return true;
-    }
+		memcpy(policy, de_key_raw_ref.data(), de_key_raw_ref.size());
+		return true;
+	}
 
-    std::string raw_ref;
+	std::string raw_ref;
 
 	if (policy_type_string.substr(1, 1) == USER_DE_KEY) {
 		userid_t user_id = std::stoi(policy_type_string.substr(3, 4).c_str());
-        if (lookup_key_ref(s_de_policies, user_id, &raw_ref)) {
-            memcpy(policy, raw_ref.data(), raw_ref.size());
-        } else
-            return false;
-    } else if (policy_type_string.substr(1, 1) == USER_CE_KEY) {
+		if (lookup_key_ref(s_de_policies, user_id, &raw_ref)) {
+			memcpy(policy, raw_ref.data(), raw_ref.size());
+		} else {
+			return false;
+		}
+	} else if (policy_type_string.substr(1, 1) == USER_CE_KEY) {
 		userid_t user_id = std::stoi(policy_type_string.substr(3, 4).c_str());
-        if (lookup_key_ref(s_ce_policies, user_id, &raw_ref)) {
-            memcpy(policy, raw_ref.data(), raw_ref.size());
-        } else
-            return false;
-    } else {
-        printf("unknown policy type: %s\n", policy_type);
-        return false;
-    }
-    return true;
+		if (lookup_key_ref(s_ce_policies, user_id, &raw_ref)) {
+			memcpy(policy, raw_ref.data(), raw_ref.size());
+		} else {
+			return false;
+		}
+	} else {
+		printf("unknown policy type: %s\n", descriptor);
+		return false;
+	}
+	return true;
 }
 
 extern "C" bool Decrypt_DE() {
