@@ -103,7 +103,12 @@ cc_library_static {
     defaults: [
         "vold_default_flags",
         "vold_default_libs",
+<<<<<<< HEAD   (d7dbfc Snap for 8756258 from d96b2ac076f0d82d3c2068cf4dda134bedb11d)
         "keystore2_use_latest_aidl_ndk_shared",
+=======
+        "vold_hw_fde_defaults",
+        "vold_hw_fde_perf_defaults",
+>>>>>>> CHANGE (b45786 vold: dynamically choose fscrypt policy [2/2])
     ],
 
     srcs: [
@@ -272,3 +277,64 @@ filegroup {
     ],
     path: "binder",
 }
+<<<<<<< HEAD   (d7dbfc Snap for 8756258 from d96b2ac076f0d82d3c2068cf4dda134bedb11d)
+=======
+
+cc_library {
+    name: "libkeystoreinfo",
+    host_supported: true,
+    cflags: [
+        "-Wno-unused-parameter",
+        "-Wno-unused-variable"
+    ],
+    include_dirs: [
+        "external/sqlite/dist/",
+        "system/vold"
+    ],
+    recovery_available: true,
+    srcs: [
+        "KeystoreInfo.cpp"
+    ],
+    shared_libs: [
+        "libsqlite"
+    ],
+    system_shared_libs: [
+        "libc", 
+        "libdl",
+        ],
+}
+
+cc_binary {
+    name: "fscryptpolicyget",
+    defaults: [
+        "vold_default_flags",
+        "vold_default_libs"
+    ],
+
+    srcs: ["fscryptpolicyget.cpp"],
+    static_libs: ["libvold"],
+
+    shared_libs: [
+        "android.hardware.health.storage@1.0",
+        "android.hardware.health.storage-V1-ndk_platform",
+        "android.system.keystore2-V1-ndk_platform",
+        "android.security.maintenance-ndk_platform",
+        "libbinder_ndk",
+        "libkeymint_support",
+    ]
+}
+
+bootstrap_go_package {
+    name: "soong-vold_defaults",
+    pkgPath: "system/vold",
+    deps: [
+        "soong",
+        "soong-android",
+        "soong-cc"
+    ],
+    srcs: [
+        "soong/makevars.go"
+    ],
+    pluginFor: ["soong_build"]
+}
+>>>>>>> CHANGE (b45786 vold: dynamically choose fscrypt policy [2/2])
