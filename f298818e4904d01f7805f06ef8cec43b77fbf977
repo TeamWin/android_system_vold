@@ -1,0 +1,174 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e66c172b_c883be5e",
+        "filename": "Decrypt.cpp",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1
+      },
+      "writtenOn": "2023-01-15T21:46:55Z",
+      "side": 1,
+      "message": "Can we use a portable type here?",
+      "revId": "f298818e4904d01f7805f06ef8cec43b77fbf977",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca16de04_c21a5972",
+        "filename": "Decrypt.cpp",
+        "patchSetId": 2
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1
+      },
+      "writtenOn": "2023-01-15T21:46:55Z",
+      "side": 1,
+      "message": "Can we use the descriptor spelling here?",
+      "revId": "f298818e4904d01f7805f06ef8cec43b77fbf977",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7fe0707_d1c261bf",
+        "filename": "Decrypt.cpp",
+        "patchSetId": 2
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1
+      },
+      "writtenOn": "2023-01-15T21:46:55Z",
+      "side": 1,
+      "message": "Can we use a portable type here?",
+      "revId": "f298818e4904d01f7805f06ef8cec43b77fbf977",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4bab59f2_f2afde52",
+        "filename": "Decrypt.cpp",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1
+      },
+      "writtenOn": "2023-01-15T21:46:55Z",
+      "side": 1,
+      "message": "Can we use a portable type here?",
+      "revId": "f298818e4904d01f7805f06ef8cec43b77fbf977",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9107935c_3c6b7e1f",
+        "filename": "Decrypt.cpp",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1
+      },
+      "writtenOn": "2023-01-15T21:46:55Z",
+      "side": 1,
+      "message": "Can we use a portable type here?",
+      "revId": "f298818e4904d01f7805f06ef8cec43b77fbf977",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f5f0f4de_14396a32",
+        "filename": "fscrypt_policy.cpp",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1
+      },
+      "writtenOn": "2023-01-15T21:46:55Z",
+      "side": 1,
+      "message": "Can we use a portable type here?",
+      "revId": "f298818e4904d01f7805f06ef8cec43b77fbf977",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d7a6914_ef69a637",
+        "filename": "fscrypt_policy.cpp",
+        "patchSetId": 2
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1
+      },
+      "writtenOn": "2023-01-15T21:46:55Z",
+      "side": 1,
+      "message": "Can we use a portable type here?",
+      "revId": "f298818e4904d01f7805f06ef8cec43b77fbf977",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d91eb0b5_64c6fda3",
+        "filename": "fscrypt_policy.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1
+      },
+      "writtenOn": "2023-01-15T21:46:55Z",
+      "side": 1,
+      "message": "Can we use a portable type here?",
+      "revId": "f298818e4904d01f7805f06ef8cec43b77fbf977",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "93e87615_f6c576a8",
+        "filename": "fscrypt_policy.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1
+      },
+      "writtenOn": "2023-01-15T21:46:55Z",
+      "side": 1,
+      "message": "Can we use a portable type here?",
+      "revId": "f298818e4904d01f7805f06ef8cec43b77fbf977",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4fee3ccc_7f8248c9",
+        "filename": "fscrypt_policy.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1
+      },
+      "writtenOn": "2023-01-15T21:46:55Z",
+      "side": 1,
+      "message": "Can we use a portable type here?",
+      "revId": "f298818e4904d01f7805f06ef8cec43b77fbf977",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    }
+  ]
+}
