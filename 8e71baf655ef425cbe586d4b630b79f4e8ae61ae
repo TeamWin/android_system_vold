@@ -51,6 +51,24 @@
       "parentUuid": "7e28ef8f_b2ac4b47",
       "revId": "8e71baf655ef425cbe586d4b630b79f4e8ae61ae",
       "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "43e3d22d_53559eaa",
+        "filename": "fscrypt_policy.cpp",
+        "patchSetId": 4
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1
+      },
+      "writtenOn": "2023-01-22T20:54:56Z",
+      "side": 1,
+      "message": "You should only use it on the stack then, malloc will leak memory each time it\u0027s called without a corresponding free.",
+      "parentUuid": "af5b3322_e7608ccf",
+      "revId": "8e71baf655ef425cbe586d4b630b79f4e8ae61ae",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
     }
   ]
 }
