@@ -29,7 +29,6 @@
 #include <android-base/strings.h>
 #include <android-base/unique_fd.h>
 #include <cutils/fs.h>
-#include <fs_mgr.h>
 #include <libdm/dm.h>
 #include <libgsi/libgsi.h>
 
@@ -238,8 +237,13 @@ static bool parse_options(const std::string& options_string, CryptoOptions* opti
 
 bool fscrypt_mount_metadata_encrypted(const std::string& blk_device, const std::string& mount_point,
                                       bool needs_encrypt, bool should_format,
+<<<<<<< HEAD   (d7dbfc Snap for 8756258 from d96b2ac076f0d82d3c2068cf4dda134bedb11d)
                                       const std::string& fs_type) {
     LOG(DEBUG) << "fscrypt_mount_metadata_encrypted: " << mount_point
+=======
+                                      const std::string& fs_type, std::string fstab_path) {
+    LOG(INFO) << "fscrypt_mount_metadata_encrypted: " << mount_point
+>>>>>>> CHANGE (764f9b decryption: Fetch file encryption from applied fstab [2/2])
                << " encrypt: " << needs_encrypt << " format: " << should_format << " with "
                << fs_type;
     auto encrypted_state = android::base::GetProperty("ro.crypto.state", "");
@@ -248,6 +252,23 @@ bool fscrypt_mount_metadata_encrypted(const std::string& blk_device, const std::
                    << encrypted_state;
         return false;
     }
+<<<<<<< HEAD   (d7dbfc Snap for 8756258 from d96b2ac076f0d82d3c2068cf4dda134bedb11d)
+=======
+    if (!fstab_path.empty()) {
+	printf("Using additional fstab for decryption %s \n", fstab_path.c_str());
+        if (!ReadFstabFromFile(fstab_path, &fstab_default)) {
+            PLOG(ERROR) << "Failed to open " << fstab_path << " Fstab ";
+            return false;
+        }
+    } else {
+        if (fstab_default.empty()) {
+            if (!ReadDefaultFstab(&fstab_default)) {
+                PLOG(ERROR) << "Failed to open default fstab";
+                return false;
+            }
+        }
+    }
+>>>>>>> CHANGE (764f9b decryption: Fetch file encryption from applied fstab [2/2])
 
     auto data_rec = GetEntryForMountPoint(&fstab_default, mount_point);
     if (!data_rec) {
@@ -255,9 +276,15 @@ bool fscrypt_mount_metadata_encrypted(const std::string& blk_device, const std::
         return false;
     }
 
-    unsigned int options_format_version = android::base::GetUintProperty<unsigned int>(
-            "ro.crypto.dm_default_key.options_format.version",
-            (GetFirstApiLevel() <= __ANDROID_API_Q__ ? 1 : 2));
+    unsigned int options_format_version = 1;
+    {
+        EncryptionOptions options;
+        if (!ParseOptions(data_rec->encryption_options, &options)) {
+            LOG(ERROR) << "Unable to parse encryption options for " << DATA_MNT_POINT ": "
+                       << data_rec->encryption_options;
+        }
+        options_format_version = options.version;
+    }
 
     CryptoOptions options;
     if (options_format_version == 1) {

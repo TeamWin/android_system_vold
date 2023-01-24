@@ -100,8 +100,13 @@ std::set<userid_t> s_ephemeral_users;
 // Map user ids to encryption policies
 std::map<userid_t, EncryptionPolicy> s_de_policies;
 std::map<userid_t, EncryptionPolicy> s_ce_policies;
+<<<<<<< HEAD   (d7dbfc Snap for 8756258 from d96b2ac076f0d82d3c2068cf4dda134bedb11d)
 
 }  // namespace
+=======
+std::string de_key_raw_ref;
+bool retry = true;
+>>>>>>> CHANGE (764f9b decryption: Fetch file encryption from applied fstab [2/2])
 
 // Returns KeyGeneration suitable for key as described in EncryptionOptions
 static KeyGeneration makeGen(const EncryptionOptions& options) {
@@ -253,6 +258,13 @@ static bool get_data_file_encryption_options(EncryptionOptions* options) {
                       "this flag from the device's fstab";
         return false;
     }
+<<<<<<< HEAD   (d7dbfc Snap for 8756258 from d96b2ac076f0d82d3c2068cf4dda134bedb11d)
+=======
+    if (options->version == 1 || !retry) {
+        options->use_hw_wrapped_key =
+            GetEntryForMountPoint(&fstab_default, DATA_MNT_POINT)->fs_mgr_flags.wrapped_key;
+    }
+>>>>>>> CHANGE (764f9b decryption: Fetch file encryption from applied fstab [2/2])
     return true;
 }
 
@@ -439,12 +451,22 @@ bool fscrypt_initialize_systemwide_keys() {
     if (!get_data_file_encryption_options(&options)) return false;
 
     KeyBuffer device_key;
+install:
     if (!retrieveOrGenerateKey(device_key_path, device_key_temp, kEmptyAuthentication,
                                makeGen(options), &device_key))
         return false;
 
     EncryptionPolicy device_policy;
-    if (!install_storage_key(DATA_MNT_POINT, options, device_key, &device_policy)) return false;
+    if (!install_storage_key(DATA_MNT_POINT, options, device_key, &device_policy)) {
+        if (retry) {
+            printf("Trying %s wrappedkey\n", options.use_hw_wrapped_key ? "without" : "with");
+            GetEntryForMountPoint(&fstab_default, DATA_MNT_POINT)->fs_mgr_flags.wrapped_key =
+                options.use_hw_wrapped_key = !options.use_hw_wrapped_key;
+            retry = false;
+            goto install;
+        }
+        return false;
+    }
 
     std::string options_string;
     if (!OptionsToString(device_policy.options, &options_string)) {
