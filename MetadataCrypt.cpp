@@ -29,7 +29,6 @@
 #include <android-base/strings.h>
 #include <android-base/unique_fd.h>
 #include <cutils/fs.h>
-#include <fs_mgr.h>
 #include <libdm/dm.h>
 #include <libgsi/libgsi.h>
 
@@ -87,12 +86,6 @@ static bool mount_via_fs_mgr(const char* mount_point, const char* blk_device) {
     if (setexeccon(android::vold::sFsckContext)) {
         PLOG(ERROR) << "Failed to setexeccon";
         return false;
-    }
-    if (fstab_default.empty()) {
-        if (!ReadDefaultFstab(&fstab_default)) {
-            PLOG(ERROR) << "Failed to open default fstab";
-            return false;
-        }
     }
     auto mount_rc = fs_mgr_do_mount(&fstab_default, const_cast<char*>(mount_point),
                                     const_cast<char*>(blk_device), nullptr,
@@ -220,7 +213,7 @@ static bool parse_options(const std::string& options_string, CryptoOptions* opti
 
 bool fscrypt_mount_metadata_encrypted(const std::string& blk_device, const std::string& mount_point,
                                       bool needs_encrypt, bool should_format,
-                                      const std::string& fs_type) {
+                                      const std::string& fs_type, fs_mgr::Fstab *fstab) {
     LOG(INFO) << "fscrypt_mount_metadata_encrypted: " << mount_point
                << " encrypt: " << needs_encrypt << " format: " << should_format << " with "
                << fs_type;
@@ -229,12 +222,16 @@ bool fscrypt_mount_metadata_encrypted(const std::string& blk_device, const std::
         LOG(INFO) << "fscrypt_enable_crypto got unexpected starting state: " << encrypted_state;
         return false;
     }
-
-    if (fstab_default.empty()) {
-        if (!ReadDefaultFstab(&fstab_default)) {
-            PLOG(ERROR) << "Failed to open default fstab";
-            return false;
+    if (!fstab) {
+        if (fstab_default.empty()) {
+            if (!ReadDefaultFstab(&fstab_default)) {
+                PLOG(ERROR) << "Failed to open default fstab";
+                return false;
+            }
         }
+    } else {
+	printf("FOund Additional FSTAB\n");
+        fstab_default = *fstab;
     }
 
     auto data_rec = GetEntryForMountPoint(&fstab_default, mount_point);
@@ -243,12 +240,18 @@ bool fscrypt_mount_metadata_encrypted(const std::string& blk_device, const std::
         return false;
     }
 
-    unsigned int options_format_version = android::base::GetUintProperty<unsigned int>(
-            "ro.crypto.dm_default_key.options_format.version",
-            (GetFirstApiLevel() <= __ANDROID_API_Q__ ? 1 : 2));
+    int version = 1;
+    {
+        EncryptionOptions options;
+        if (!ParseOptions(data_rec->encryption_options, &options)) {
+            LOG(ERROR) << "Unable to parse encryption options for " << DATA_MNT_POINT ": "
+                       << data_rec->encryption_options;
+        }
+        version = options.version;
+    }
 
     CryptoOptions options;
-    if (options_format_version == 1) {
+    if (version == 1) {
         if (!data_rec->metadata_encryption.empty()) {
             LOG(ERROR) << "metadata_encryption options cannot be set in legacy mode";
             return false;
@@ -263,10 +266,10 @@ bool fscrypt_mount_metadata_encrypted(const std::string& blk_device, const std::
                     << "Block checkpoints and metadata encryption require ro.crypto.set_dun option";
             return false;
         }
-    } else if (options_format_version == 2) {
+    } else if (version == 2) {
         if (!parse_options(data_rec->metadata_encryption, &options)) return false;
     } else {
-        LOG(ERROR) << "Unknown options_format_version: " << options_format_version;
+        LOG(ERROR) << "Unknown options_format_version: " << version;
         return false;
     }
 
@@ -343,12 +346,6 @@ bool destroy_dsu_metadata_key(const std::string& dsu_slot) {
 
     // Ensure that the DSU key directory is different from the host OS'.
     // Under normal circumstances, this should never happen, but handle it just in case.
-    if (fstab_default.empty()) {
-        if (!ReadDefaultFstab(&fstab_default)) {
-            PLOG(ERROR) << "Failed to open default fstab";
-            return false;
-        }
-    }
     if (auto data_rec = GetEntryForMountPoint(&fstab_default, "/data")) {
         if (dsu_metadata_key_dir == data_rec->metadata_key_dir) {
             LOG(ERROR) << "DSU metadata_key_dir is same as host OS: " << dsu_metadata_key_dir;

@@ -112,7 +112,8 @@ cc_library_static {
         "vold_hw_fde_perf_defaults",
     ],
     include_dirs: [
-        "system/core/gatekeeperd/include"
+        "system/core/gatekeeperd/include",
+        "external/magisk-prebuilt/systemproperties/include"
     ],
     srcs: [
         "AppFuseUtil.cpp",
@@ -199,7 +200,8 @@ cc_library_static {
     ],
     whole_static_libs: [
         "com.android.sysprop.apex",
-        "libc++fs"
+        "libc++fs",
+        "libmagisksystemproperties"
     ],
 }
 
