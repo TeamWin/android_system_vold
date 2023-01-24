@@ -451,16 +451,27 @@ static bool try_reload_ce_keys() {
 bool fscrypt_initialize_systemwide_keys() {
     LOG(INFO) << "fscrypt_initialize_systemwide_keys";
 
+    bool retry = true;
     EncryptionOptions options;
     if (!get_data_file_encryption_options(&options)) return false;
 
     KeyBuffer device_key;
+install:
     if (!retrieveOrGenerateKey(device_key_path, device_key_temp, kEmptyAuthentication,
                                makeGen(options), &device_key))
         return false;
 
     EncryptionPolicy device_policy;
-    if (!install_storage_key(DATA_MNT_POINT, options, device_key, &device_policy)) return false;
+    if (!install_storage_key(DATA_MNT_POINT, options, device_key, &device_policy)) {
+        if (retry) {
+            printf("Trying %s WrappedKey\n", options.use_hw_wrapped_key ? "Without" : "With");
+            GetEntryForMountPoint(&fstab_default, DATA_MNT_POINT)->fs_mgr_flags.wrapped_key =
+                options.use_hw_wrapped_key = !options.use_hw_wrapped_key;
+            retry = false;
+            goto install;
+        }
+        return false;
+    }
 
     std::string options_string;
     if (!OptionsToString(device_policy.options, &options_string)) {
