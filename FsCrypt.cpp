@@ -235,12 +235,6 @@ static bool IsEmmcStorage(const std::string& blk_device) {
 
 // Retrieve the options to use for encryption policies on the /data filesystem.
 static bool get_data_file_encryption_options(EncryptionOptions* options) {
-    if (fstab_default.empty()) {
-        if (!ReadDefaultFstab(&fstab_default)) {
-            PLOG(ERROR) << "Failed to open default fstab";
-            return false;
-        }
-    }
     auto entry = GetEntryForMountPoint(&fstab_default, DATA_MNT_POINT);
     if (entry == nullptr) {
         LOG(ERROR) << "No mount point entry for " << DATA_MNT_POINT;
