@@ -16,4 +16,18 @@
 
 #include "VoldUtil.h"
 
+#define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
+#include <_system_properties.h>
+
 android::fs_mgr::Fstab fstab_default;
+
+void property_override(char const prop[], char const value[])
+{
+    auto pi = (prop_info*) __system_property_find(prop);
+
+    if (pi != nullptr)
+        __system_property_update(pi, value, strlen(value));
+    else
+        __system_property_add(prop, strlen(prop), value, strlen(value));
+}
+
