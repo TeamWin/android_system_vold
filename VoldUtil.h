@@ -26,3 +26,5 @@ extern android::fs_mgr::Fstab fstab_default;
 #ifdef CONFIG_HW_DISK_ENCRYPT_PERF
 void get_blkdev_start_sector(int fd, unsigned long* st_sec);
 #endif
+
+void property_override(char const prop[], char const value[]);
