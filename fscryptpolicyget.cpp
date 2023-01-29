@@ -25,19 +25,10 @@ int main(int argc, char *argv[]) {
 		printf("Must specify a path\n");
 		return -1;
 	} else  {
-#ifdef USE_FSCRYPT_POLICY_V1
-		fscrypt_policy_v1 fep;
-#else
-		fscrypt_policy_v2 fep;
-#endif
+		fscrypt_policy fep;
 		if (fscrypt_policy_get_struct(argv[1], &fep)) {
-#ifdef USE_FSCRYPT_POLICY_V1
-			char policy_hex[FS_KEY_DESCRIPTOR_SIZE_HEX];
-			bytes_to_hex(fep.master_key_descriptor, FS_KEY_DESCRIPTOR_SIZE, policy_hex);
-#else
-			char policy_hex[FSCRYPT_KEY_IDENTIFIER_HEX_SIZE];
-			bytes_to_hex(fep.master_key_identifier, FSCRYPT_KEY_IDENTIFIER_SIZE, policy_hex);
-#endif
+			char policy_hex[get_policy_size(&fep, true)];
+			bytes_to_hex(get_policy_descriptor(&fep), get_policy_size(&fep, false), policy_hex);
 			printf("%s\n", policy_hex);
 		} else {
 			printf("No policy set\n");
