@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "def5edb7_e4f017ab",
+        "filename": "MetadataCrypt.cpp",
+        "patchSetId": 13
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 32
+      },
+      "writtenOn": "2023-01-30T13:24:24Z",
+      "side": 1,
+      "message": "Please fix this message, perhaps make it more descriptive like \"Using additional fstab for decryption\" or something like that",
+      "revId": "2bfdf4a39f62c6774d68d2137ce1e2f480ff4f3a",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    }
+  ]
+}
