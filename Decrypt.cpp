@@ -487,6 +487,7 @@ namespace keystore {
 			KeystoreInfo keystore_info;
 			std::string handle = keystore_info.getHandle(user_id);
 			std::string keystore_alias = keystore_info.getAlias(handle);
+			printf("DEBUG: keystore_alias: '%s'\n", keystore_alias.c_str());
 			int32_t error_code;
 			unsigned char* cipher_text = (unsigned char*)byteptr + 12; // The cipher text comes immediately after the IV
 			std::string cipher_text_str(byteptr, byteptr + spblob_data.size() - 14);
