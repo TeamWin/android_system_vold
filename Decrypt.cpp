@@ -487,6 +487,7 @@ namespace keystore {
 			KeystoreInfo keystore_info;
 			std::string handle = keystore_info.getHandle(user_id);
 			std::string keystore_alias = keystore_info.getAlias(handle);
+			printf("DEBUG: keystore_alias: '%s'\n", keystore_alias.c_str());
 			int32_t error_code;
 			unsigned char* cipher_text = (unsigned char*)byteptr + 12; // The cipher text comes immediately after the IV
 			std::string cipher_text_str(byteptr, byteptr + spblob_data.size() - 14);
@@ -509,11 +510,23 @@ namespace keystore {
 				auto error = unwrapError(rc);
 				if (ks2::ResponseCode(error) == ks2::ResponseCode::KEY_NOT_FOUND) {
 					printf("key not found\n");
+					std::shared_ptr<ks2::IKeystoreSecurityLevel> sec_level;
+					auto ret = keystore->getSecurityLevel(keymint::SecurityLevel::TRUSTED_ENVIRONMENT, &sec_level);
+					printf("DEBUG: %s \n", ret.getDescription().c_str());
+					ks2::KeyMetadata keyMetadata;
+					rc = sec_level->generateKey(keyDescriptor(keystore_alias), {}, begin_params.vector_data(), 0, {}, &keyMetadata);
+					if (!rc.isOk()) {
+						printf("Failed to generate key %s\n", rc.getDescription().c_str());
+					} else {
+						rc = keystore->getKeyEntry(keyDescriptor(keystore_alias), &keyEntryResponse);
+						goto further;
+					}
 				} else {
 					printf("Failed to get key entry: %s\n", rc.getDescription().c_str());
 				}
 				return disk_decryption_secret_key;
 			}
+further:
 			std::variant<int, ks2::KeyEntryResponse> response = keyEntryResponse;
 			auto keyResponse = std::get<ks2::KeyEntryResponse>(response);
 			ks2::CreateOperationResponse encOperationResponse;
