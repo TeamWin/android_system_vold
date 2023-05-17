@@ -181,7 +181,6 @@ cc_library_static {
         "android.hardware.weaver@1.0",
         "android.security.apc-ndk_platform",
         "android.system.keystore2-V1-ndk_platform",
-        "android.system.keystore2-V1-ndk_platform",
         "android.security.authorization-ndk_platform",
         "android.security.maintenance-ndk_platform",
         "libbinder",
