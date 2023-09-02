@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f61399f0_444c9d44",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 823
+      },
+      "writtenOn": "2023-09-02T10:22:41Z",
+      "side": 1,
+      "message": "Tested fine on my OnePlus Ace 2 (aka. OnePlus 11R) with no password, password and pattern",
+      "revId": "33023e74910e3f4b1e362bbbcc1fc679045a5fce",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    }
+  ]
+}
