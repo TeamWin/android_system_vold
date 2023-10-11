@@ -52,6 +52,23 @@
       "parentUuid": "99990a7a_3a2fc67b",
       "revId": "ce40a47b08fd35bfd9c5fc6cc9332a4a636788c1",
       "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b5b4dda_1dfff632",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 751
+      },
+      "writtenOn": "2023-10-11T05:27:53Z",
+      "side": 1,
+      "message": "Tested with A12 to A14 Roms, works perfectly.",
+      "revId": "ce40a47b08fd35bfd9c5fc6cc9332a4a636788c1",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
     }
   ]
 }
