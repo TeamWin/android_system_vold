@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ac1b4ae_833bfd16",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 32
+      },
+      "writtenOn": "2023-11-03T20:56:28Z",
+      "side": 1,
+      "message": "This is probably fine if it\u0027s just consolidating/simplifying stuff",
+      "revId": "81ef977d25ae38004e5d7ceb71bac10701378253",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    }
+  ]
+}
