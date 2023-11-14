@@ -621,6 +621,22 @@ bool Free_Return(bool retval, void* weaver_key, password_data_struct* pwd) {
 	return retval;
 }
 
+bool Decrypt_CE_storage(const userid_t user_id, int token, const std::string& secret) {
+	printf("Attempting to unlock user storage\n");
+	int flags = android::os::IVold::STORAGE_FLAG_CE;
+	if (!fscrypt_unlock_user_key(user_id, token, secret)) {
+		printf("fscrypt_unlock_user_key returned fail\n");
+		return false;
+	}
+	printf("Attempting to prepare user storage\n");
+	if (!fscrypt_prepare_user_storage("", user_id, 0, flags)) {
+		printf("failed to fscrypt_prepare_user_storage\n");
+		return false;
+	}
+	printf("User %i Decrypted Successfully!\n", user_id);
+	return true;
+}
+
 // /* Decrypt_User_Synth_Pass is the TWRP C++ equivalent to spBasedDoVerifyCredential
 //  * https://android.googlesource.com/platform/frameworks/base/+/android-8.0.0_r23/services/core/java/com/android/server/locksettings/LockSettingsService.java#1998 */
 bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password) {
@@ -636,7 +652,6 @@ bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password
 	uint32_t auth_token_len = 0;
 	std::string secret; // this will be the disk decryption key that is sent to vold
 	int token = 0; // there is no token used for this kind of decrypt, key escrow is handled by weaver
-	int flags = android::os::IVold::STORAGE_FLAG_CE;
 	char spblob_path_char[PATH_MAX];
 	sprintf(spblob_path_char, "/data/system_de/%d/spblob/", user_id);
 	std::string spblob_path = spblob_path_char;
@@ -804,18 +819,10 @@ bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password
 		return Free_Return(retval, weaver_key, &pwd);
 	}
 
-	printf("Attempting to unlock user storage\n");
-	if (!fscrypt_unlock_user_key(user_id, token, secret)) {
-		printf("fscrypt_unlock_user_key returned fail\n");
+	if (!Decrypt_CE_storage(user_id, token, secret)) {
 		return Free_Return(retval, weaver_key, &pwd);
 	}
 
-	printf("Attempting to prepare user storage\n");
-	if (!fscrypt_prepare_user_storage("", user_id, 0, flags)) {
-		printf("failed to fscrypt_prepare_user_storage\n");
-		return Free_Return(retval, weaver_key, &pwd);
-	}
-	printf("User %i Decrypted Successfully!\n", user_id);
 	retval = true;
 	return Free_Return(retval, weaver_key, &pwd);
 }
@@ -892,19 +899,10 @@ extern "C" bool Decrypt_User(const userid_t user_id, const std::string& Password
 		return false;
 	}
 
-	int flags = android::os::IVold::STORAGE_FLAG_CE;
-
 	if (Default_Password) {
-		if (!fscrypt_unlock_user_key(user_id, 0, "!")) {
-			printf("unlock_user_key returned fail\n");
+		if (!Decrypt_CE_storage(user_id, 0, "!")) {
 			return Decrypt_User_Synth_Pass(user_id, Password);
 		}
-		printf("Attempting to prepare user storage\n");
-		if (!fscrypt_prepare_user_storage("", user_id, 0, flags)) {
-			printf("failed to fscrypt_prepare_user_storage\n");
-			return false;
-		}
-		printf("User %i Decrypted Successfully!\n", user_id);
 		return true;
 	}
 	if (stat("/data/system_de/0/spblob", &st) == 0) {
@@ -962,17 +960,9 @@ extern "C" bool Decrypt_User(const userid_t user_id, const std::string& Password
 	}
 	// The secret is "Android FBE credential hash" plus appended 0x00 to reach 128 bytes then append the user's password then feed that to sha512sum
 	std::string secret = HashPassword(Password);
-	if (!fscrypt_unlock_user_key(user_id, 0, secret)) {
-		printf("fscrypt_unlock_user_key returned fail\n");
+	if (!Decrypt_CE_storage(user_id, 0, secret)) {
 		return false;
 	}
-
-	printf("Attempting to prepare user storage\n");
-	if (!fscrypt_prepare_user_storage("", user_id, 0, flags)) {
-		printf("failed to fscrypt_prepare_user_storage\n");
-		return false;
-	}
-	printf("User %i Decrypted Successfully!\n", user_id);
 	return true;
 }
 }
