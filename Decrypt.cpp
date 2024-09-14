@@ -75,10 +75,6 @@
 #include <keymint_support/authorization_set.h>
 #include <keymasterV4_1/keymaster_utils.h>
 
-extern "C" {
-#include "crypto_scrypt.h"
-}
-
 #include "fscrypt_policy.h"
 #include "fscrypt-common.h"
 #include "HashPassword.h"
@@ -364,25 +360,25 @@ bool Get_Password_Data(const std::string& spblob_path, const std::string& handle
  * https://android.googlesource.com/platform/frameworks/base/+/android-8.0.0_r23/services/core/java/com/android/server/locksettings/SyntheticPasswordManager.java#765
  * called here
  * https://android.googlesource.com/platform/frameworks/base/+/android-8.0.0_r23/services/core/java/com/android/server/locksettings/SyntheticPasswordManager.java#1050 */
-bool Get_Password_Token(const password_data_struct *pwd, const std::string& Password, unsigned char* password_token) {
-	if (!password_token) {
-		printf("password_token is null\n");
-		return false;
-	}
-	unsigned int N = 1 << pwd->scryptN;
-	unsigned int r = 1 << pwd->scryptR;
-	unsigned int p = 1 << pwd->scryptP;
+//bool Get_Password_Token(const password_data_struct *pwd, const std::string& Password, unsigned char* password_token) {
+//	if (!password_token) {
+//		printf("password_token is null\n");
+//		return false;
+//	}
+//	unsigned int N = 1 << pwd->scryptN;
+//	unsigned int r = 1 << pwd->scryptR;
+//	unsigned int p = 1 << pwd->scryptP;
 	//printf("N %i r %i p %i\n", N, r, p);
-	int ret = crypto_scrypt(reinterpret_cast<const uint8_t*>(Password.data()), Password.size(),
-                          reinterpret_cast<const uint8_t*>(pwd->salt), pwd->salt_len,
-                          N, r, p,
-                          password_token, 32);
-	if (ret != 0) {
-		printf("scrypt error\n");
-		return false;
-	}
-	return true;
-}
+//	int ret = crypto_scrypt(reinterpret_cast<const uint8_t*>(Password.data()), Password.size(),
+//                          reinterpret_cast<const uint8_t*>(pwd->salt), pwd->salt_len,
+//                          N, r, p,
+//                          password_token, 32);
+//	if (ret != 0) {
+//		printf("scrypt error\n");
+//		return false;
+//	}
+//	return true;
+// }
 
 // Data structure for the *.weaver file, see Get_Weaver_Data below
 struct weaver_data_struct {
@@ -710,11 +706,11 @@ bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password
 			printf("Failed to Get_Password_Data\n");
 			return Free_Return(retval, weaver_key, &pwd);
 		}
-		printf("fscrypt::GetPassword_Token\n");
-		if (!Get_Password_Token(&pwd, Password, &password_token[0])) {
-			printf("Failed to Get_Password_Token\n");
-			return Free_Return(retval, weaver_key, &pwd);
-		}
+//		printf("fscrypt::GetPassword_Token\n");
+//		if (!Get_Password_Token(&pwd, Password, &password_token[0])) {
+//			printf("Failed to Get_Password_Token\n");
+//			return Free_Return(retval, weaver_key, &pwd);
+//		}
 	} else {
 		android::keystore::copySqliteDb(); // early copy db for keystore
 		std::string defpassword = "default-password";
