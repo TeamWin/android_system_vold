@@ -456,19 +456,20 @@ status_t PrepareDir(const std::string& path, mode_t mode, uid_t uid, gid_t gid,
     auto clearfscreatecon = android::base::make_scope_guard([] { setfscreatecon(nullptr); });
     auto secontext = std::unique_ptr<char, void (*)(char*)>(nullptr, freecon);
     char* tmp_secontext;
-
-    if (selabel_lookup(sehandle, &tmp_secontext, cpath, S_IFDIR) == 0) {
-        secontext.reset(tmp_secontext);
-        if (setfscreatecon(secontext.get()) != 0) {
-            LOG(ERROR) << "Failed to setfscreatecon for directory " << path;
-            return -EINVAL;
-        }
-    } else if (errno == ENOENT) {
-        LOG(DEBUG) << "No selabel defined for directory " << path;
-    } else {
-        PLOG(ERROR) << "Failed to look up selabel for directory " << path;
-        return -errno;
-    }
+//    if (selabel_lookup(sehandle, &tmp_secontext, cpath, S_IFDIR) == 0) {
+//    LOG(INFO) << "PrepareDir selabel_lookup";
+//        secontext.reset(tmp_secontext);
+//    LOG(INFO) << "PrepareDir secontext reset";
+//        if (setfscreatecon(secontext.get()) != 0) {
+//            LOG(ERROR) << "Failed to setfscreatecon for directory " << path;
+//            return -EINVAL;
+//        }
+//    } else if (errno == ENOENT) {
+//        LOG(INFO) << "No selabel defined for directory " << path;
+//    } else {
+//        LOG(ERROR) << "Failed to look up selabel for directory " << path;
+//        return -errno;
+//    }
 
     if (fs_prepare_dir(cpath, mode, uid, gid) != 0) return -errno;
     if (attrs && SetAttrs(path, attrs) != 0) return -errno;
