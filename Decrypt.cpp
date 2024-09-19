@@ -820,6 +820,7 @@ bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password
 									(const android::hardware::gatekeeper::V1_0::GatekeeperResponse &rsp) {
 										// ret = static_cast<int>(rsp.code); // propagate errors
 										if (rsp.code >= android::hardware::gatekeeper::V1_0::GatekeeperStatusCode::STATUS_OK) {
+											printf("GateKeeper status ok\n");
 											gkResponse = GKResponse::ok({rsp.data.begin(), rsp.data.end()});
 											const hw_auth_token_t* hwAuthToken =
 												reinterpret_cast<const hw_auth_token_t*>(gkResponse.payload().data());
@@ -839,6 +840,15 @@ bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password
 												ALOGE("error: could not connect to keystore service\n");
 											}
 											auto binder_result = service->addAuthToken(authToken);
+										}
+										else {
+											if (rsp.code == android::hardware::gatekeeper::V1_0::GatekeeperStatusCode::ERROR_RETRY_TIMEOUT) {
+												printf("GateKeeper response timeout\n");
+												gkResponse = GKResponse::retry(rsp.timeout);
+											} else {
+												printf("GateKeeper response error\n");
+												gkResponse = GKResponse::error();
+											}
 										}
 									}
 								 );
@@ -978,13 +988,17 @@ extern "C" bool Decrypt_User(const userid_t user_id, const std::string& Password
 							(const android::hardware::gatekeeper::V1_0::GatekeeperResponse &rsp) {
 								ret = static_cast<int>(rsp.code); // propagate errors
 								if (rsp.code >= android::hardware::gatekeeper::V1_0::GatekeeperStatusCode::STATUS_OK) {
+									printf("GateKeeper status ok\n");
 									auth_token = new uint8_t[rsp.data.size()];
 									auth_token_len = rsp.data.size();
 									memcpy(auth_token, rsp.data.data(), auth_token_len);
 									request_reenroll = (rsp.code == android::hardware::gatekeeper::V1_0::GatekeeperStatusCode::STATUS_REENROLL);
 									ret = 0; // all success states are reported as 0
 								} else if (rsp.code == android::hardware::gatekeeper::V1_0::GatekeeperStatusCode::ERROR_RETRY_TIMEOUT && rsp.timeout > 0) {
+									printf("GateKeeper response timeout\n");
 									ret = rsp.timeout;
+								} else {
+									printf("GateKeeper response error\n");
 								}
 							}
 						 );
