@@ -101,19 +101,19 @@ extern "C" bool fscrypt_policy_set_struct(const char *directory, const struct fs
         PLOG(ERROR) << "Failed to open directory " << directory;
         return false;
     }
-    if (android::vold::isFsKeyringSupported()) {
+//    if (android::vold::isFsKeyringSupported()) {
         if (ioctl(fd, FS_IOC_SET_ENCRYPTION_POLICY, fep)) {
             PLOG(ERROR) << "Failed to set encryption policy for " << directory;
             close(fd);
             return false;
         }
-    } else {
-        if (ioctl(fd, FS_IOC_SET_ENCRYPTION_POLICY, fep)) {
-            PLOG(ERROR) << "Failed to set encryption policy for " << directory;
-            close(fd);
-            return false;
-        }
-    }
+//    } else {
+//        if (ioctl(fd, FS_IOC_SET_ENCRYPTION_POLICY, fep)) {
+//            PLOG(ERROR) << "Failed to set encryption policy for " << directory;
+//            close(fd);
+//            return false;
+//        }
+//    }
     close(fd);
     return true;
 }
@@ -135,7 +135,7 @@ extern "C" bool fscrypt_policy_get_struct(const char *directory, struct fscrypt_
 #endif
     struct fscrypt_get_policy_ex_arg ex_policy = {0};
 
-    if (android::vold::isFsKeyringSupported()) {
+//    if (android::vold::isFsKeyringSupported()) {
         ex_policy.policy_size = sizeof(ex_policy.policy);
         if (ioctl(fd, FS_IOC_GET_ENCRYPTION_POLICY_EX, &ex_policy) != 0) {
             PLOG(ERROR) << "Failed to get encryption policy for " << directory;
@@ -147,14 +147,14 @@ extern "C" bool fscrypt_policy_get_struct(const char *directory, struct fscrypt_
 #else
         memcpy(fep, &ex_policy.policy.v2, sizeof(ex_policy.policy.v2));
 #endif
-    } else {
-        if (ioctl(fd, FS_IOC_GET_ENCRYPTION_POLICY, &ex_policy.policy.v1) != 0) {
-            PLOG(ERROR) << "Failed to get encryption policy for " << directory;
-            close(fd);
-            return false;
-        }
-        memcpy(fep, &ex_policy.policy.v1, sizeof(ex_policy.policy.v1));
-    }
+//    } else {
+//        if (ioctl(fd, FS_IOC_GET_ENCRYPTION_POLICY, &ex_policy.policy.v1) != 0) {
+//            PLOG(ERROR) << "Failed to get encryption policy for " << directory;
+//            close(fd);
+//            return false;
+//        }
+//        memcpy(fep, &ex_policy.policy.v1, sizeof(ex_policy.policy.v1));
+//    }
     close(fd);
     return true;
 }

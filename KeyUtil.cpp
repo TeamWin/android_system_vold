@@ -151,9 +151,9 @@ bool installKey(const std::string& mountpoint, const EncryptionOptions& options,
             } else {
                 policy->key_raw_ref = generateKeyRef((const uint8_t*)key.data(), key.size());
             }
-            if (!isFsKeyringSupported()) {
-                return installKeyLegacy(key, policy->key_raw_ref);
-            }
+//            if (!isFsKeyringSupported()) {
+//                return installKeyLegacy(key, policy->key_raw_ref);
+//            }
             if (!buildKeySpecifier(&arg->key_spec, *policy)) {
                 return false;
             }
