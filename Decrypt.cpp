@@ -667,15 +667,15 @@ bool Free_Return(bool retval, void* weaver_key, password_data_struct* pwd) {
 	return retval;
 }
 
-bool Decrypt_CE_storage(const userid_t user_id, int token, const std::string& secret) {
+bool Decrypt_CE_storage(const userid_t user_id, const std::string& secret) {
 	printf("Attempting to unlock user storage\n");
 	int flags = android::os::IVold::STORAGE_FLAG_CE;
-	if (!fscrypt_unlock_user_key(user_id, token, secret)) {
-		printf("fscrypt_unlock_user_key returned fail\n");
+	if (!fscrypt_unlock_ce_storage(user_id, secret)) {
+		printf("fscrypt_unlock_ce_storage returned fail\n");
 		return false;
 	}
 	printf("Attempting to prepare user storage\n");
-	if (!fscrypt_prepare_user_storage("", user_id, 0, flags)) {
+	if (!fscrypt_prepare_user_storage("", user_id, flags)) {
 		printf("failed to fscrypt_prepare_user_storage\n");
 		return false;
 	}
@@ -925,7 +925,7 @@ bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password
 		return Free_Return(retval, weaver_key, &pwd);
 	}
 
-	if (!Decrypt_CE_storage(user_id, token, secret)) {
+	if (!Decrypt_CE_storage(user_id, secret)) {
 		return Free_Return(retval, weaver_key, &pwd);
 	}
 
@@ -1006,7 +1006,7 @@ extern "C" bool Decrypt_User(const userid_t user_id, const std::string& Password
 	}
 
 	if (Default_Password) {
-		if (!Decrypt_CE_storage(user_id, 0, "!")) {
+		if (!Decrypt_CE_storage(user_id, "!")) {
 			return Decrypt_User_Synth_Pass(user_id, Password);
 		}
 		return true;
@@ -1072,7 +1072,7 @@ extern "C" bool Decrypt_User(const userid_t user_id, const std::string& Password
 	}
 	// The secret is "Android FBE credential hash" plus appended 0x00 to reach 128 bytes then append the user's password then feed that to sha512sum
 	std::string secret = HashPassword(Password);
-	if (!Decrypt_CE_storage(user_id, 0, secret)) {
+	if (!Decrypt_CE_storage(user_id, secret)) {
 		return false;
 	}
 	return true;
