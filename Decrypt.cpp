@@ -82,7 +82,6 @@ extern "C" {
 }
 
 #include "fscrypt_policy.h"
-#include "fscrypt-common.h"
 #include "HashPassword.h"
 #include "KeystoreInfo.hpp"
 #include "KeyStorage.h"
@@ -108,7 +107,7 @@ inline std::string hidlVec2String(const ::keystore::hidl_vec<uint8_t>& value) {
     return std::string(reinterpret_cast<const std::string::value_type*>(&value[0]), value.size());
 }
 
-static bool lookup_ref_key_internal(std::map<userid_t, android::fscrypt::EncryptionPolicy> key_map, const uint8_t* policy, userid_t* user_id) {
+static bool lookup_ref_key_internal(std::map<userid_t, UserPolicies> key_map, const uint8_t* policy, userid_t* user_id) {
 #ifdef USE_FSCRYPT_POLICY_V1
 	char policy_string_hex[FS_KEY_DESCRIPTOR_SIZE_HEX];
 	char key_map_hex[FS_KEY_DESCRIPTOR_SIZE_HEX];
@@ -119,11 +118,11 @@ static bool lookup_ref_key_internal(std::map<userid_t, android::fscrypt::Encrypt
 	bytes_to_hex(policy, FSCRYPT_KEY_IDENTIFIER_SIZE, policy_string_hex);
 #endif
 
-    for (std::map<userid_t, android::fscrypt::EncryptionPolicy>::iterator it=key_map.begin(); it!=key_map.end(); ++it) {
+    for (std::map<userid_t, UserPolicies>::iterator it=key_map.begin(); it!=key_map.end(); ++it) {
 #ifdef USE_FSCRYPT_POLICY_V1
-		bytes_to_hex(reinterpret_cast<const uint8_t*>(&it->second.key_raw_ref[0]), FS_KEY_DESCRIPTOR_SIZE, key_map_hex);
+		bytes_to_hex(reinterpret_cast<const uint8_t*>(&it->second.internal.key_raw_ref[0]), FS_KEY_DESCRIPTOR_SIZE, key_map_hex);
 #else
-		bytes_to_hex(reinterpret_cast<const uint8_t*>(&it->second.key_raw_ref[0]), FSCRYPT_KEY_IDENTIFIER_SIZE, key_map_hex);
+		bytes_to_hex(reinterpret_cast<const uint8_t*>(&it->second.internal.key_raw_ref[0]), FSCRYPT_KEY_IDENTIFIER_SIZE, key_map_hex);
 #endif
 		std::string key_map_hex_string = std::string(key_map_hex);
 		if (key_map_hex_string == policy_string_hex) {

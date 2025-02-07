@@ -56,7 +56,6 @@
 #include <android-base/stringprintf.h>
 #include <android-base/strings.h>
 #include <android-base/unique_fd.h>
-#include "fscrypt-common.h"
 
 using android::base::Basename;
 using android::base::Realpath;
@@ -110,16 +109,6 @@ std::map<std::string, std::string> s_deferred_fixations;
 EncryptionPolicy s_device_policy;
 
 }  // namespace
-
-// Struct that holds the EncryptionPolicy for each CE or DE key that is currently installed
-// (added to the kernel) for a particular user
-struct UserPolicies {
-    // Internal storage policy.  Exists whenever a user's UserPolicies exists at all, and used
-    // instead of a map entry keyed by an empty UUID to make this invariant explicit.
-    EncryptionPolicy internal;
-    // Adoptable storage policies, indexed by (nonempty) volume UUID
-    std::map<std::string, EncryptionPolicy> adoptable;
-};
 
 // The currently installed CE and DE keys for each user.  Protected by VolumeManager::mCryptLock.
 std::map<userid_t, UserPolicies> s_ce_policies;
@@ -1154,13 +1143,13 @@ bool fscrypt_destroy_volume_keys(const std::string& volume_uuid) {
     return res;
 }
 
-bool lookup_key_ref(const std::map<userid_t, android::fscrypt::EncryptionPolicy>& key_map, userid_t user_id,
+bool lookup_key_ref(const std::map<userid_t, UserPolicies>& policy_map, userid_t user_id,
                            std::string* raw_ref) {
-    auto refi = key_map.find(user_id);
-    if (refi == key_map.end()) {
+    auto refi = policy_map.find(user_id);
+    if (refi == policy_map.end()) {
         LOG(ERROR) << "Cannot find key for " << user_id;
         return false;
     }
-    *raw_ref = refi->second.key_raw_ref;
+    *raw_ref = refi->second.internal.key_raw_ref;
     return true;
 }
