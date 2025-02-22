@@ -673,9 +673,7 @@ bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password
 	pwd.password_handle = NULL;
 	pwd.handle_len = 0;
 	char application_id[PASSWORD_TOKEN_SIZE + SHA512_DIGEST_LENGTH];
-
-    uint32_t auth_token_len = 0;
-
+	uint32_t auth_token_len = 0;
 	std::string secret; // this will be the disk decryption key that is sent to vold
 	int token = 0; // there is no token used for this kind of decrypt, key escrow is handled by weaver
 	int flags = android::os::IVold::STORAGE_FLAG_CE;
@@ -688,18 +686,24 @@ bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password
 	std::string handle_str = keystore_info.getHandle(user_id);
 	// Now we begin driving unwrapPasswordBasedSyntheticPassword from: https://android.googlesource.com/platform/frameworks/base/+/android-8.0.0_r23/services/core/java/com/android/server/locksettings/SyntheticPasswordManager.java#758
 	// First we read the password data which contains scrypt parameters
-	if (!Get_Password_Data(spblob_path, handle_str, &pwd)) {
-		printf("Failed to Get_Password_Data\n");
-		return Free_Return(retval, weaver_key, &pwd);
-	}
 	// printf("pwd N %i R %i P %i salt ", pwd.scryptN, pwd.scryptR, pwd.scryptP); output_hex((char*)pwd.salt, pwd.salt_len); printf("\n");
-	unsigned char password_token[PASSWORD_TOKEN_SIZE];
 	// printf("Password: '%s'\n", Password.c_str());
 	// The password token is the password scrypted with the parameters from the password data file
-	printf("fscrypt::GetPassword_Token\n");
-	if (!Get_Password_Token(&pwd, Password, &password_token[0])) {
-		printf("Failed to Get_Password_Token\n");
-		return Free_Return(retval, weaver_key, &pwd);
+	unsigned char password_token[PASSWORD_TOKEN_SIZE];
+	if (Password != "!") {
+		if (!Get_Password_Data(spblob_path, handle_str, &pwd)) {
+			printf("Failed to Get_Password_Data\n");
+			return Free_Return(retval, weaver_key, &pwd);
+		}
+		printf("fscrypt::GetPassword_Token\n");
+		if (!Get_Password_Token(&pwd, Password, &password_token[0])) {
+			printf("Failed to Get_Password_Token\n");
+			return Free_Return(retval, weaver_key, &pwd);
+		}
+	} else {
+		android::keystore::copySqliteDb(); // early copy db for keystore
+		std::string defpassword = "default-password";
+		memcpy(password_token, defpassword.data(), defpassword.length());
 	}
 	// output_hex(&password_token[0], PASSWORD_TOKEN_SIZE);printf("\n");
 	if (Is_Weaver(spblob_path, handle_str)) {
@@ -769,64 +773,65 @@ bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password
 		}
 		memcpy((void*)&application_id[0], (void*)&password_token[0], PASSWORD_TOKEN_SIZE);
 		memcpy((void*)&application_id[PASSWORD_TOKEN_SIZE], secdiscardable, SHA512_DIGEST_LENGTH);
-
-		int ret = -1;
-		bool request_reenroll = false;
-		android::sp<android::hardware::gatekeeper::V1_0::IGatekeeper> gk_device;
-		gk_device = ::android::hardware::gatekeeper::V1_0::IGatekeeper::getService();
-		if (gk_device == nullptr) {
-			printf("failed to get gatekeeper service\n");
-			return Free_Return(retval, weaver_key, &pwd);
-		}
-		if (pwd.handle_len <= 0) {
-			printf("no password handle supplied\n");
-			return Free_Return(retval, weaver_key, &pwd);
-		}
-		android::hardware::hidl_vec<uint8_t> pwd_handle_hidl;
-		pwd_handle_hidl.setToExternal(const_cast<uint8_t *>((const uint8_t *)pwd.password_handle), pwd.handle_len);
-		void* gk_pwd_token = PersonalizedHashBinary(PERSONALIZATION_USER_GK_AUTH, (char*)&password_token[0], PASSWORD_TOKEN_SIZE);
-		if (!gk_pwd_token) {
-			printf("malloc error getting gatekeeper_key\n");
-			return Free_Return(retval, weaver_key, &pwd);
-		}
-		android::hardware::hidl_vec<uint8_t> gk_pwd_token_hidl;
-		GKResponse gkResponse;
-		gk_pwd_token_hidl.setToExternal(const_cast<uint8_t *>((const uint8_t *)gk_pwd_token), SHA512_DIGEST_LENGTH);
-		android::hardware::Return<void> hwRet =
-			gk_device->verify(fakeUid(user_id), 0 /* challenge */,
-							  pwd_handle_hidl,
-							  gk_pwd_token_hidl,
-							  [&gkResponse]
-								// []
-								(const android::hardware::gatekeeper::V1_0::GatekeeperResponse &rsp) {
-									// ret = static_cast<int>(rsp.code); // propagate errors
-									if (rsp.code >= android::hardware::gatekeeper::V1_0::GatekeeperStatusCode::STATUS_OK) {
-										gkResponse = GKResponse::ok({rsp.data.begin(), rsp.data.end()});
-										const hw_auth_token_t* hwAuthToken =
-											reinterpret_cast<const hw_auth_token_t*>(gkResponse.payload().data());
-										HardwareAuthToken authToken;
-										authToken.timestamp.milliSeconds = betoh64(hwAuthToken->timestamp);
-										authToken.challenge = hwAuthToken->challenge;
-										authToken.userId = hwAuthToken->user_id;
-										authToken.authenticatorId = hwAuthToken->authenticator_id;
-										authToken.authenticatorType = static_cast<HardwareAuthenticatorType>(
-												betoh32(hwAuthToken->authenticator_type));
-										authToken.mac.assign(&hwAuthToken->hmac[0], &hwAuthToken->hmac[32]);
-										AIBinder* authzAIBinder = AServiceManager_getService("android.security.authorization");
-										::ndk::SpAIBinder binder(authzAIBinder);
-										auto service = aidl::android::security::authorization::IKeystoreAuthorization::fromBinder(binder);
-										if (service == NULL) {
-											printf("error: could not connect to keystore service\n");
-											ALOGE("error: could not connect to keystore service\n");
+		if (Password != "!") {
+			int ret = -1;
+			bool request_reenroll = false;
+			android::sp<android::hardware::gatekeeper::V1_0::IGatekeeper> gk_device;
+			gk_device = ::android::hardware::gatekeeper::V1_0::IGatekeeper::getService();
+			if (gk_device == nullptr) {
+				printf("failed to get gatekeeper service\n");
+				return Free_Return(retval, weaver_key, &pwd);
+			}
+			if (pwd.handle_len <= 0) {
+				printf("no password handle supplied\n");
+				return Free_Return(retval, weaver_key, &pwd);
+			}
+			android::hardware::hidl_vec<uint8_t> pwd_handle_hidl;
+			pwd_handle_hidl.setToExternal(const_cast<uint8_t *>((const uint8_t *)pwd.password_handle), pwd.handle_len);
+			void* gk_pwd_token = PersonalizedHashBinary(PERSONALIZATION_USER_GK_AUTH, (char*)&password_token[0], PASSWORD_TOKEN_SIZE);
+			if (!gk_pwd_token) {
+				printf("malloc error getting gatekeeper_key\n");
+				return Free_Return(retval, weaver_key, &pwd);
+			}
+			android::hardware::hidl_vec<uint8_t> gk_pwd_token_hidl;
+			GKResponse gkResponse;
+			gk_pwd_token_hidl.setToExternal(const_cast<uint8_t *>((const uint8_t *)gk_pwd_token), SHA512_DIGEST_LENGTH);
+			android::hardware::Return<void> hwRet =
+				gk_device->verify(fakeUid(user_id), 0 /* challenge */,
+								  pwd_handle_hidl,
+								  gk_pwd_token_hidl,
+								  [&gkResponse]
+									// []
+									(const android::hardware::gatekeeper::V1_0::GatekeeperResponse &rsp) {
+										// ret = static_cast<int>(rsp.code); // propagate errors
+										if (rsp.code >= android::hardware::gatekeeper::V1_0::GatekeeperStatusCode::STATUS_OK) {
+											gkResponse = GKResponse::ok({rsp.data.begin(), rsp.data.end()});
+											const hw_auth_token_t* hwAuthToken =
+												reinterpret_cast<const hw_auth_token_t*>(gkResponse.payload().data());
+											HardwareAuthToken authToken;
+											authToken.timestamp.milliSeconds = betoh64(hwAuthToken->timestamp);
+											authToken.challenge = hwAuthToken->challenge;
+											authToken.userId = hwAuthToken->user_id;
+											authToken.authenticatorId = hwAuthToken->authenticator_id;
+											authToken.authenticatorType = static_cast<HardwareAuthenticatorType>(
+													betoh32(hwAuthToken->authenticator_type));
+											authToken.mac.assign(&hwAuthToken->hmac[0], &hwAuthToken->hmac[32]);
+											AIBinder* authzAIBinder = AServiceManager_getService("android.security.authorization");
+											::ndk::SpAIBinder binder(authzAIBinder);
+											auto service = aidl::android::security::authorization::IKeystoreAuthorization::fromBinder(binder);
+											if (service == NULL) {
+												printf("error: could not connect to keystore service\n");
+												ALOGE("error: could not connect to keystore service\n");
+											}
+											auto binder_result = service->addAuthToken(authToken);
 										}
-										auto binder_result = service->addAuthToken(authToken);
 									}
-								}
-							 );
-		free(gk_pwd_token);
-		if (!hwRet.isOk()) {
-			printf("gatekeeper verification failed\n");
-			return Free_Return(retval, weaver_key, &pwd);
+								 );
+			free(gk_pwd_token);
+			if (!hwRet.isOk()) {
+				printf("gatekeeper verification failed\n");
+				return Free_Return(retval, weaver_key, &pwd);
+			}
 		}
 	}
 	// Now we will handle https://android.googlesource.com/platform/frameworks/base/+/android-8.0.0_r23/services/core/java/com/android/server/locksettings/SyntheticPasswordManager.java#816
@@ -846,7 +851,6 @@ bool Decrypt_User_Synth_Pass(const userid_t user_id, const std::string& Password
 	}
 
 	printf("Attempting to prepare user storage\n");
-
 	if (!fscrypt_prepare_user_storage("", user_id, 0, flags)) {
 		printf("failed to fscrypt_prepare_user_storage\n");
 		return Free_Return(retval, weaver_key, &pwd);
@@ -933,7 +937,7 @@ extern "C" bool Decrypt_User(const userid_t user_id, const std::string& Password
 	if (Default_Password) {
 		if (!fscrypt_unlock_user_key(user_id, 0, "!")) {
 			printf("unlock_user_key returned fail\n");
-			return false;
+			return Decrypt_User_Synth_Pass(user_id, Password);
 		}
 		printf("Attempting to prepare user storage\n");
 		if (!fscrypt_prepare_user_storage("", user_id, 0, flags)) {
