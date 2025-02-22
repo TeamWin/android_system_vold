@@ -44,6 +44,7 @@ cc_defaults {
         "libfec_rs",
         "libfs_avb",
         "libfs_mgr",
+        "libscrypt_static",
         "libsquashfs_utils",
         "libvold_binder",
     ],
