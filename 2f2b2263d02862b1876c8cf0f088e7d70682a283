@@ -16,6 +16,24 @@
       "message": "Can we remove the commented code?",
       "revId": "2f2b2263d02862b1876c8cf0f088e7d70682a283",
       "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a3d71ee_0abf0023",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 238
+      },
+      "writtenOn": "2025-05-03T16:07:03Z",
+      "side": 1,
+      "message": "Are we going with this or reverting the removal?",
+      "parentUuid": "1bc0661d_c69cf4f8",
+      "revId": "2f2b2263d02862b1876c8cf0f088e7d70682a283",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
     }
   ]
 }
