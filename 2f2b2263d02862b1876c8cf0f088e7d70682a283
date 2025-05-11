@@ -69,6 +69,24 @@
       "message": "Will it do any harm to leave it? Old devices may not *need* to use the 14.1 tree, but may still want or prefer to use it (for reasons that may not yet be apparent to anyone here).",
       "revId": "2f2b2263d02862b1876c8cf0f088e7d70682a283",
       "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "11a06fb4_4d5f7351",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 238
+      },
+      "writtenOn": "2025-05-11T14:59:50Z",
+      "side": 1,
+      "message": "we can deprecate for now, can revert later if needed",
+      "parentUuid": "cc97cd58_d6a67a74",
+      "revId": "2f2b2263d02862b1876c8cf0f088e7d70682a283",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
     }
   ]
 }
