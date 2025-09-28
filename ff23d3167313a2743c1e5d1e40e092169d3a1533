@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d640d80f_70a027c9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1474
+      },
+      "writtenOn": "2025-09-28T13:03:40Z",
+      "side": 1,
+      "message": "Patch fixed a35x, pa1q, a16x TWRP 14.1 build",
+      "revId": "ff23d3167313a2743c1e5d1e40e092169d3a1533",
+      "serverId": "9c1c7d72-6534-4d44-b0ea-39f63e804833"
+    }
+  ]
+}
