@@ -501,6 +501,8 @@ install:
 bool fscrypt_init_user0() {
     LOG(INFO) << "fscrypt_init_user0";
     if (fscrypt_is_native()) {
+        // Ensure parent /data/misc/vold exists before creating user_keys subdir
+        if (!prepare_dir(std::string() + DATA_MNT_POINT + "/misc/vold", 0700, AID_ROOT, AID_ROOT)) return false;
         if (!prepare_dir(user_key_dir, 0700, AID_ROOT, AID_ROOT)) return false;
         if (!prepare_dir(user_key_dir + "/ce", 0700, AID_ROOT, AID_ROOT)) return false;
         if (!prepare_dir(user_key_dir + "/de", 0700, AID_ROOT, AID_ROOT)) return false;
