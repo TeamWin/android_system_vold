@@ -13,6 +13,8 @@ cc_defaults {
         "-Wno-unused-parameter",
         "-Wno-unused-variable",
         "-Wno-macro-redefined",
+        // OrangeFox: fall back to raw key when ICE/keymaster cannot export hw-wrapped key
+        "-DOF_METADATA_HWWRAPPED_FALLBACK",
     ],
 
     clang: true,
