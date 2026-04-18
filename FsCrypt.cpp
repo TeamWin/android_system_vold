@@ -16,6 +16,7 @@
 
 #include "FsCrypt.h"
 
+#include "fscrypt_policy.h"
 #include "KeyStorage.h"
 #include "KeyUtil.h"
 #include "Utils.h"
@@ -262,6 +263,31 @@ static bool get_data_file_encryption_options(EncryptionOptions* options) {
         options->use_hw_wrapped_key =
             GetEntryForMountPoint(&fstab_default, DATA_MNT_POINT)->fs_mgr_flags.wrapped_key;
     }
+
+    // Probe actual fscrypt policy version from an existing encrypted directory.
+    // The mode file may be stale (written by a previous ROM with a different first_api_level),
+    // so trust the on-disk inode policy rather than the mode file.
+    fscrypt_policy existing_policy;
+    for (const char* dir : {"/data/misc", "/data/system"}) {
+        if (!android::vold::pathExists(dir)) continue;
+        if (fscrypt_policy_get_struct(dir, &existing_policy)) {
+            int detected = (existing_policy.version == FSCRYPT_POLICY_V2) ? 2 : 1;
+            if (detected != (int)options->version) {
+                LOG(WARNING) << "Mode file says fscrypt version " << options->version
+                             << " but " << dir << " has policy version " << detected
+                             << ", using detected version";
+                options->version = detected;
+                // Derive PAD flags from the on-disk inode policy rather than hardcoding.
+                uint8_t inode_pad;
+                if (detected == 2)
+                    inode_pad = existing_policy.v2.flags & FSCRYPT_POLICY_FLAGS_PAD_MASK;
+                else
+                    inode_pad = existing_policy.v1.flags & FSCRYPT_POLICY_FLAGS_PAD_MASK;
+                options->flags = (options->flags & ~FSCRYPT_POLICY_FLAGS_PAD_MASK) | inode_pad;
+            }
+            break;
+        }
+    }
     return true;
 }
 
@@ -501,6 +527,8 @@ install:
 bool fscrypt_init_user0() {
     LOG(INFO) << "fscrypt_init_user0";
     if (fscrypt_is_native()) {
+        // Ensure parent /data/misc/vold exists before creating user_keys subdir
+        if (!prepare_dir(std::string() + DATA_MNT_POINT + "/misc/vold", 0700, AID_ROOT, AID_ROOT)) return false;
         if (!prepare_dir(user_key_dir, 0700, AID_ROOT, AID_ROOT)) return false;
         if (!prepare_dir(user_key_dir + "/ce", 0700, AID_ROOT, AID_ROOT)) return false;
         if (!prepare_dir(user_key_dir + "/de", 0700, AID_ROOT, AID_ROOT)) return false;

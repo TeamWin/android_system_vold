@@ -144,10 +144,27 @@ static bool create_crypto_blk_dev(const std::string& dm_name, const std::string&
     *nr_sec &= ~7;
 
     KeyBuffer module_key;
-    if (options.use_hw_wrapped_key) {
+    bool actual_use_hw_wrapped_key = options.use_hw_wrapped_key;
+    if (actual_use_hw_wrapped_key) {
         if (!exportWrappedStorageKey(key, &module_key)) {
+#ifdef OF_METADATA_HWWRAPPED_FALLBACK
+            // Device doesn't support exporting the HW-wrapped key (e.g. ICE returns -33).
+            // Fall back to using the raw key so metadata decryption can proceed in recovery,
+            // but only if the key size matches the expected raw key size.
+            if (key.size() == options.cipher.get_keysize()) {
+                LOG(WARNING) << "Failed to get ephemeral wrapped key, falling back to raw key";
+                module_key = key;
+                actual_use_hw_wrapped_key = false;
+            } else {
+                LOG(ERROR) << "HW-wrapped key export failed and key size " << key.size()
+                           << " != expected " << options.cipher.get_keysize()
+                           << ", cannot fall back to raw key";
+                return false;
+            }
+#else
             LOG(ERROR) << "Failed to get ephemeral wrapped key";
             return false;
+#endif
         }
     } else {
         module_key = key;
@@ -164,7 +181,7 @@ static bool create_crypto_blk_dev(const std::string& dm_name, const std::string&
                                                        hex_key, blk_device, 0);
     if (options.use_legacy_options_format) target->SetUseLegacyOptionsFormat();
     if (options.set_dun) target->SetSetDun();
-    if (options.use_hw_wrapped_key) target->SetWrappedKeyV0();
+    if (actual_use_hw_wrapped_key) target->SetWrappedKeyV0();
 
     DmTable table;
     table.AddTarget(std::move(target));
@@ -249,8 +266,17 @@ bool fscrypt_mount_metadata_encrypted(const std::string& blk_device, const std::
         if (!ParseOptions(data_rec->encryption_options, &options)) {
             LOG(ERROR) << "Unable to parse encryption options for " << DATA_MNT_POINT ": "
                        << data_rec->encryption_options;
+            return false;
         }
         options_format_version = options.version;
+        // Force version 2 only when fstab explicitly sets metadata_encryption,
+        // indicating the ROM expects v2 format.  This avoids breaking legitimate
+        // v1 metadata encryption setups.
+        if (options_format_version < 2 && !data_rec->metadata_encryption.empty()) {
+            LOG(WARNING) << "options_format_version=" << options_format_version
+                         << " but fstab has metadata_encryption set, forcing to 2";
+            options_format_version = 2;
+        }
     }
 
     CryptoOptions options;
