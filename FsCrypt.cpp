@@ -269,6 +269,7 @@ static bool get_data_file_encryption_options(EncryptionOptions* options) {
     // so trust the on-disk inode policy rather than the mode file.
     fscrypt_policy existing_policy;
     for (const char* dir : {"/data/misc", "/data/system"}) {
+        if (!android::vold::pathExists(dir)) continue;
         if (fscrypt_policy_get_struct(dir, &existing_policy)) {
             int detected = (existing_policy.version == FSCRYPT_POLICY_V2) ? 2 : 1;
             if (detected != (int)options->version) {
@@ -276,9 +277,13 @@ static bool get_data_file_encryption_options(EncryptionOptions* options) {
                              << " but " << dir << " has policy version " << detected
                              << ", using detected version";
                 options->version = detected;
-                // v1 on Q devices uses PAD_4; v2 always uses PAD_16.
-                options->flags = (options->flags & ~FSCRYPT_POLICY_FLAGS_PAD_MASK)
-                               | FSCRYPT_POLICY_FLAGS_PAD_16;
+                // Derive PAD flags from the on-disk inode policy rather than hardcoding.
+                uint8_t inode_pad;
+                if (detected == 2)
+                    inode_pad = existing_policy.v2.flags & FSCRYPT_POLICY_FLAGS_PAD_MASK;
+                else
+                    inode_pad = existing_policy.v1.flags & FSCRYPT_POLICY_FLAGS_PAD_MASK;
+                options->flags = (options->flags & ~FSCRYPT_POLICY_FLAGS_PAD_MASK) | inode_pad;
             }
             break;
         }

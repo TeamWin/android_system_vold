@@ -149,10 +149,18 @@ static bool create_crypto_blk_dev(const std::string& dm_name, const std::string&
         if (!exportWrappedStorageKey(key, &module_key)) {
 #ifdef OF_METADATA_HWWRAPPED_FALLBACK
             // Device doesn't support exporting the HW-wrapped key (e.g. ICE returns -33).
-            // Fall back to using the raw key so metadata decryption can proceed in recovery.
-            LOG(WARNING) << "Failed to get ephemeral wrapped key, falling back to raw key";
-            module_key = key;
-            actual_use_hw_wrapped_key = false;
+            // Fall back to using the raw key so metadata decryption can proceed in recovery,
+            // but only if the key size matches the expected raw key size.
+            if (key.size() == options.cipher.get_keysize()) {
+                LOG(WARNING) << "Failed to get ephemeral wrapped key, falling back to raw key";
+                module_key = key;
+                actual_use_hw_wrapped_key = false;
+            } else {
+                LOG(ERROR) << "HW-wrapped key export failed and key size " << key.size()
+                           << " != expected " << options.cipher.get_keysize()
+                           << ", cannot fall back to raw key";
+                return false;
+            }
 #else
             LOG(ERROR) << "Failed to get ephemeral wrapped key";
             return false;
@@ -258,15 +266,15 @@ bool fscrypt_mount_metadata_encrypted(const std::string& blk_device, const std::
         if (!ParseOptions(data_rec->encryption_options, &options)) {
             LOG(ERROR) << "Unable to parse encryption options for " << DATA_MNT_POINT ": "
                        << data_rec->encryption_options;
+            return false;
         }
         options_format_version = options.version;
-        // PATCH: Force version 2 for devices where vendor reports outdated
-        // first_api_level (e.g. 29) but ROM actually uses v2 format.
-        // Without this, recovery uses legacy AES-256-XTS cipher and format,
-        // which produces garbage decryption on ROMs using modern aes-xts-plain64.
-        if (options_format_version < 2) {
+        // Force version 2 only when fstab explicitly sets metadata_encryption,
+        // indicating the ROM expects v2 format.  This avoids breaking legitimate
+        // v1 metadata encryption setups.
+        if (options_format_version < 2 && !data_rec->metadata_encryption.empty()) {
             LOG(WARNING) << "options_format_version=" << options_format_version
-                         << " from vendor prop, forcing to 2 for modern ROM compatibility";
+                         << " but fstab has metadata_encryption set, forcing to 2";
             options_format_version = 2;
         }
     }
